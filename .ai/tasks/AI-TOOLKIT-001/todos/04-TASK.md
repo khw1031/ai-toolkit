@@ -260,3 +260,23 @@ node packages/cli/bin/ai-toolkit.js --skills --source=owner/repo
 git add packages/cli/src/commands/ packages/cli/src/index.ts packages/cli/package.json
 git commit -m "feat/AI-TOOLKIT-001-[AI]: Implement CommandHandler with flag parsing"
 ```
+
+---
+
+## 완료 후: TASK_MASTER 업데이트
+
+**중요**: 이 작업 완료 후 반드시 `.ai/tasks/AI-TOOLKIT-001/todos/00-TASK_MASTER.md`의 진행 상황을 업데이트하세요.
+
+```markdown
+### Phase 2: 핵심 모듈 구현 (일부 병렬)
+
+| 번호 | 제목 | 우선순위 | 복잡도 | 의존성 | 상태 |
+|------|------|----------|--------|--------|------|
+| 04 | CommandHandler 구현 | P0 | Medium | 03 | ✅ completed |
+...
+```
+
+**업데이트 항목**:
+- [ ] 서브태스크 목록의 상태를 `✅ completed`로 변경
+- [ ] 최근 업데이트 테이블에 완료 날짜 추가
+- [ ] Phase 진행률 업데이트 (예: 1/4 → 2/4)

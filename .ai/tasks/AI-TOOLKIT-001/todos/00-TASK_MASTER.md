@@ -331,7 +331,30 @@ graph TD
 
 ## 실행 가이드
 
-### 수동 실행
+### Task Executor Agent 활용 (권장)
+
+**Step 4 (Implementation) 단계에서 사용하는 방법:**
+
+1. **Task 도구로 Agent 호출**:
+   ```
+   Task 도구 사용:
+   - subagent_type: "general-purpose"
+   - prompt: "AI-TOOLKIT-001 todos/01-TASK.md 작업 수행해줘"
+   - description: "Implement Task 01"
+   ```
+
+2. **병렬 실행** (의존성 없는 태스크):
+   ```
+   - Task 06 (GitHubResolver), Task 07 (LocalResolver) 동시 호출
+   - Task 11, 12, 13, 14 병렬 실행
+   ```
+
+3. **Agent 작업 완료 후**:
+   - Agent가 반환한 결과 검토
+   - 이 문서(00-TASK_MASTER.md)의 진행 상황 표 업데이트
+   - 다음 의존 태스크 시작
+
+### 수동 실행 (대안)
 
 ```bash
 # 1. 태스크 파일 읽기
@@ -340,7 +363,7 @@ cat .ai/tasks/AI-TOOLKIT-001/todos/01-TASK.md
 # 2. 새 대화에서 실행
 # "AI-TOOLKIT-001 Task 01 시작해줘"
 
-# 3. 완료 후 이 문서의 진행 상황 표 업데이트
+# 3. 완료 후 이 문서의 진행 상황 표 반드시 업데이트
 ```
 
 ### 병렬 실행 (권장 시점)

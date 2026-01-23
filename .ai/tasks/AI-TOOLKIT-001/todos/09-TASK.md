@@ -538,3 +538,14 @@ describe('InstallManager', () => {
 git add packages/cli/src/install/InstallManager.ts packages/cli/src/install/InstallManager.test.ts packages/cli/src/utils/hash.ts packages/cli/src/utils/fs-safe.ts
 git commit -m "feat/AI-TOOLKIT-001-[AI]: Implement InstallManager with Skip and Overwrite handling"
 ```
+
+---
+
+## 완료 후: TASK_MASTER 업데이트
+
+**중요**: 이 작업 완료 후 반드시 `.ai/tasks/AI-TOOLKIT-001/todos/00-TASK_MASTER.md`의 진행 상황을 업데이트하세요.
+
+**업데이트 항목**:
+- [ ] 해당 서브태스크의 상태를 `✅ completed`로 변경
+- [ ] 최근 업데이트 테이블에 완료 날짜 추가
+- [ ] Phase 진행률 업데이트

@@ -463,3 +463,14 @@ describe('BatchHandler', () => {
 git add packages/cli/src/utils/diff.ts packages/cli/src/utils/diff.test.ts packages/cli/src/install/BatchHandler.ts packages/cli/src/install/BatchHandler.test.ts packages/cli/src/install/DuplicateHandler.ts packages/cli/src/install/InstallManager.ts packages/cli/src/prompts/InteractivePrompt.ts packages/cli/package.json
 git commit -m "feat/AI-TOOLKIT-001-[AI]: Implement Compare and batch duplicate handling"
 ```
+
+---
+
+## 완료 후: TASK_MASTER 업데이트
+
+**중요**: 이 작업 완료 후 반드시 `.ai/tasks/AI-TOOLKIT-001/todos/00-TASK_MASTER.md`의 진행 상황을 업데이트하세요.
+
+**업데이트 항목**:
+- [ ] 해당 서브태스크의 상태를 `✅ completed`로 변경
+- [ ] 최근 업데이트 테이블에 완료 날짜 추가
+- [ ] Phase 진행률 업데이트
