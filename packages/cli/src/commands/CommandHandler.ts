@@ -1,11 +1,18 @@
 import { Command as Commander } from 'commander';
 import type { Command } from '../types';
+import { Logger } from '../utils/Logger';
+import { InteractivePrompt } from '../prompts/InteractivePrompt';
+import { GitHubResolver } from '../source/GitHubResolver';
+import { LocalResolver } from '../source/LocalResolver';
+import { ResourceParser } from '../parser/ResourceParser';
 
 export class CommandHandler {
   private program: Commander;
+  private logger: Logger;
 
   constructor() {
     this.program = new Commander();
+    this.logger = new Logger();
     this.setupCommands();
   }
 
@@ -33,18 +40,26 @@ export class CommandHandler {
   }
 
   async run(argv: string[]): Promise<void> {
-    this.program.parse(argv);
-    const options = this.program.opts();
+    try {
+      this.logger.displayWelcome();
 
-    const command = this.parseCommand(options);
+      this.program.parse(argv);
+      const options = this.program.opts();
 
-    // Route to interactive or non-interactive
-    if (this.isInteractive(command)) {
-      console.log('Interactive mode - to be implemented in Task 10');
-      // await this.runInteractive(command);
-    } else {
-      console.log('Non-interactive mode');
-      await this.runNonInteractive(command);
+      const command = this.parseCommand(options);
+
+      // Route to interactive or non-interactive
+      if (this.isInteractive(command)) {
+        await this.runInteractive(command);
+      } else {
+        this.logger.info('Non-interactive mode');
+        await this.runNonInteractive(command);
+      }
+
+      this.logger.displayCompletion();
+    } catch (error: any) {
+      this.logger.error(error.message);
+      process.exit(1);
     }
   }
 
@@ -77,6 +92,46 @@ export class CommandHandler {
     return !command.type || !command.source;
   }
 
+  private async runInteractive(_command: Command): Promise<void> {
+    const prompt = new InteractivePrompt();
+    const result = await prompt.run();
+
+    // Resolve source
+    const sourceType = this.detectSourceType(result.source);
+    const resolver =
+      sourceType === 'github' ? new GitHubResolver() : new LocalResolver();
+
+    this.logger.info(`Resolving source: ${result.source}`);
+    const sourceFiles = await resolver.resolve(result.source, result.type);
+
+    // Parse resources
+    const parser = new ResourceParser();
+    const resources = parser.parseResources(sourceFiles, result.type);
+
+    // Let user select resources
+    const selectedResources = await prompt.selectResources(resources);
+
+    this.logger.success(
+      `Selected ${selectedResources.length} resources for ${result.agents.length} agents`
+    );
+    this.logger.info('Installation will be implemented in subsequent tasks');
+  }
+
+  private detectSourceType(
+    source: string
+  ): 'github' | 'bitbucket' | 'local' | 'url' {
+    if (source.includes('github.com') || /^[^\/]+\/[^\/]+$/.test(source)) {
+      return 'github';
+    }
+    if (source.includes('bitbucket.org')) {
+      return 'bitbucket';
+    }
+    if (source.startsWith('http://') || source.startsWith('https://')) {
+      return 'url';
+    }
+    return 'local';
+  }
+
   private async runNonInteractive(command: Command): Promise<void> {
     // Validation
     if (!command.type) {
@@ -86,8 +141,9 @@ export class CommandHandler {
       throw new Error('--source is required');
     }
 
-    console.log('Command:', command);
-    console.log('Source resolution will be implemented in Task 06-07');
+    this.logger.info(`Resource type: ${command.type}`);
+    this.logger.info(`Source: ${command.source}`);
+    this.logger.info('Source resolution will be implemented in Task 06-07');
     // TODO: Implement in subsequent tasks
   }
 }
