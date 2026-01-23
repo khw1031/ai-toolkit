@@ -91,7 +91,7 @@ export interface InstallResult {
   resourceName: string;
   agent: AgentKey;
   success: boolean;
-  action: 'created' | 'skipped' | 'overwritten' | 'renamed' | 'backed-up';
+  action: 'created' | 'skipped' | 'overwritten' | 'renamed' | 'backed-up' | 'failed';
   path: string;
   backupPath?: string;
   renamedTo?: string;
