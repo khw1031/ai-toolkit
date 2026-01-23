@@ -1,6 +1,7 @@
 import inquirer from 'inquirer';
 import { PathResolver } from '@ai-toolkit/registry';
 import type { ResourceType, AgentKey, Resource } from '../types';
+import type { BatchAction } from '../install/BatchHandler';
 
 export interface InteractiveResult {
   type: ResourceType;
@@ -204,10 +205,60 @@ export class InteractivePrompt {
           { name: 'Overwrite - Replace with new version', value: 'overwrite' },
           { name: 'Rename - Save as new (e.g., skill-2)', value: 'rename' },
           { name: 'Backup - Backup existing and overwrite', value: 'backup' },
-          { name: 'Compare - View differences (Task 14)', value: 'compare' },
+          { name: 'Compare - View differences first', value: 'compare' },
         ],
       },
     ]);
     return action;
+  }
+
+  /**
+   * Handle batch duplicates - prompt for action to apply to all duplicates
+   *
+   * When multiple files already exist, this allows the user to choose
+   * a single action to apply to all of them instead of prompting for each.
+   *
+   * @param duplicateCount - Number of duplicate files detected
+   * @returns The batch action to apply
+   */
+  async handleBatchDuplicates(duplicateCount: number): Promise<BatchAction> {
+    const { action } = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'action',
+        message: `${duplicateCount} files already exist. How do you want to handle them?`,
+        choices: [
+          { name: 'Ask for each file', value: 'ask-each' },
+          { name: 'Skip all - Keep all existing files', value: 'skip-all' },
+          { name: 'Overwrite all - Replace all with new versions', value: 'overwrite-all' },
+          { name: 'Backup all - Backup existing and install new', value: 'backup-all' },
+        ],
+      },
+    ]);
+
+    return action;
+  }
+
+  /**
+   * Confirm installation
+   *
+   * @param resourceCount - Number of resources to install
+   * @param agentCount - Number of agents to install for
+   * @returns true if user confirms, false otherwise
+   */
+  async confirmInstallation(
+    resourceCount: number,
+    agentCount: number
+  ): Promise<boolean> {
+    const { confirmed } = await inquirer.prompt([
+      {
+        type: 'confirm',
+        name: 'confirmed',
+        message: `Install ${resourceCount} resource(s) for ${agentCount} agent(s)?`,
+        default: true,
+      },
+    ]);
+
+    return confirmed;
   }
 }
