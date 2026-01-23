@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@ai-toolkit/registry": "workspace:*",
+    "@octokit/rest": "^20.0.0",
     "commander": "^11.0.0",
     "chalk": "^5.0.0"
   },
