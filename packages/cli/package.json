@@ -1,0 +1,34 @@
+{
+  "name": "@ai-toolkit/cli",
+  "version": "0.1.0",
+  "description": "Universal AI agent resource installer CLI",
+  "type": "module",
+  "bin": {
+    "ai-toolkit": "./dist/index.mjs"
+  },
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "test": "vitest",
+    "lint": "tsc --noEmit",
+    "dev": "tsx ./src/index.ts"
+  },
+  "dependencies": {
+    "@ai-toolkit/registry": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsdown": "^0.20.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vitest": "^2.0.0"
+  },
+  "engines": {
+    "node": ">=24.0.0",
+    "pnpm": ">=10.0.0"
+  }
+}
