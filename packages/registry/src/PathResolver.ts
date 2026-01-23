@@ -1,53 +1,78 @@
-import * as path from 'node:path';
-import * as os from 'node:os';
-import agentsData from '../data/agents.json' assert { type: 'json' };
-import type { AgentKey, ResourceType, AgentRegistry } from './types';
-
-const agents = agentsData as AgentRegistry;
+import { homedir } from 'os';
+import { join } from 'path';
+import agents from '../data/agents.json';
+import type { AgentKey, ResourceType, AgentConfig } from './types';
 
 export class PathResolver {
+  private agents: Record<AgentKey, AgentConfig>;
+
+  constructor() {
+    this.agents = agents as Record<AgentKey, AgentConfig>;
+  }
+
   /**
-   * 에이전트별 경로를 반환합니다.
-   * @param agent 에이전트 키
-   * @param type 리소스 타입
-   * @param scope project 또는 global
-   * @returns 절대 경로
+   * Resolve agent path
+   * @param agent - Agent key (claude-code, cursor, etc.)
+   * @param type - Resource type (skill, rule, command, agent)
+   * @param scope - Install scope (project, global)
+   * @returns Resolved path
    */
   resolveAgentPath(
     agent: AgentKey,
     type: ResourceType,
     scope: 'project' | 'global'
   ): string {
-    const agentConfig = agents[agent];
+    const agentConfig = this.agents[agent];
     if (!agentConfig) {
       throw new Error(`Unknown agent: ${agent}`);
     }
 
-    const basePath = agentConfig.paths[scope][type];
-    return this.expandTilde(basePath);
-  }
-
-  /**
-   * ~ 기호를 $HOME으로 치환합니다.
-   */
-  private expandTilde(filePath: string): string {
-    if (filePath.startsWith('~/')) {
-      return path.join(os.homedir(), filePath.slice(2));
+    const paths = agentConfig.paths[scope];
+    if (!paths) {
+      throw new Error(`Unknown scope: ${scope}`);
     }
-    return filePath;
+
+    // Map singular type to plural property name
+    const typeMap: Record<ResourceType, keyof typeof paths> = {
+      skill: 'skills',
+      rule: 'rules',
+      command: 'commands',
+      agent: 'agents',
+    };
+
+    const pathTemplate = paths[typeMap[type]];
+    if (!pathTemplate) {
+      throw new Error(`Unknown resource type: ${type}`);
+    }
+
+    return this.expandTilde(pathTemplate);
   }
 
   /**
-   * 모든 에이전트 목록을 반환합니다.
+   * Get all supported agents
    */
-  getAllAgents(): AgentKey[] {
-    return Object.keys(agents) as AgentKey[];
+  getSupportedAgents(): AgentKey[] {
+    return Object.keys(this.agents) as AgentKey[];
   }
 
   /**
-   * 에이전트 이름을 반환합니다.
+   * Get agent display name
    */
   getAgentName(agent: AgentKey): string {
-    return agents[agent]?.name || agent;
+    const agentConfig = this.agents[agent];
+    if (!agentConfig) {
+      throw new Error(`Unknown agent: ${agent}`);
+    }
+    return agentConfig.name;
+  }
+
+  /**
+   * Expand ~ to $HOME
+   */
+  private expandTilde(path: string): string {
+    if (path.startsWith('~/')) {
+      return join(homedir(), path.slice(2));
+    }
+    return path;
   }
 }

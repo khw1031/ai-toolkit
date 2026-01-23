@@ -6,3 +6,4 @@ export type {
   AgentConfig,
   AgentRegistry,
 } from './types';
+export { default as agents } from '../data/agents.json';

@@ -1,4 +1,4 @@
-export type ResourceType = 'skills' | 'rules' | 'commands' | 'agents';
+export type ResourceType = 'skill' | 'rule' | 'command' | 'agent';
 
 export type AgentKey =
   | 'claude-code'
