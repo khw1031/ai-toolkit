@@ -238,7 +238,7 @@ PathResolver (Registry에서 경로 가져오기)
 
 **병렬 가능**: 06, 07 (03 의존 후 동시 진행)
 
-**완료 조건**: GitHub/로컬에서 파일 목록 가져오기 성공
+**완료 조건**: GitHub/로컬에서 파일 목록 가져오기 성공 ✅
 
 ---
 
@@ -312,17 +312,18 @@ graph TD
 ### 전체 진행률
 
 - [x] Phase 1: Monorepo 초기화 (3/3) ✅
-- [ ] Phase 2: 핵심 모듈 구현 (3/4)
+- [x] Phase 2: 핵심 모듈 구현 (4/4) ✅
 - [ ] Phase 3: 파싱 및 설치 (0/2)
 - [ ] Phase 4: 고급 기능 (0/6)
 - [ ] Phase 5: 배포 (0/1)
 
-**총 진행률**: 6/16 (37.5%)
+**총 진행률**: 7/16 (43.75%)
 
 ### 최근 업데이트
 
 | 날짜 | 작업 | 담당자 | 상태 |
 |------|------|--------|------|
+| 2026-01-24 | Task 06: GitHubResolver 구현 | AI | ✅ completed |
 | 2026-01-24 | Task 07: LocalResolver 구현 | AI | ✅ completed |
 | 2026-01-24 | Task 05: PathResolver 구현 | AI | ✅ completed |
 | 2026-01-24 | Task 04: CommandHandler 구현 | AI | ✅ completed |
@@ -391,7 +392,7 @@ cat .ai/tasks/AI-TOOLKIT-001/todos/01-TASK.md
 ### Phase 완료 체크리스트
 
 - [x] Phase 1 완료: `pnpm turbo build` 성공 ✅
-- [ ] Phase 2 완료: GitHub/로컬에서 파일 목록 가져오기 성공
+- [x] Phase 2 완료: GitHub/로컬에서 파일 목록 가져오기 성공 ✅
 - [ ] Phase 3 완료: E2E 테스트 (GitHub → 로컬 설치) 통과
 - [ ] Phase 4 완료: 모든 중복 처리 전략 테스트 통과
 - [ ] Phase 5 완료: npm 배포 및 `npx @ai-toolkit/cli` 실행 성공
