@@ -1,0 +1,20 @@
+{
+  "name": "workflow-framework",
+  "version": "1.0.0",
+  "description": "Framework for creating custom workflow skills",
+  "author": "ai-toolkit",
+  "license": "MIT",
+  "category": "framework",
+  "tags": ["workflow", "framework", "multi-step", "automation"],
+  "compatibility": {
+    "platforms": ["macos", "linux"],
+    "shell": "bash 4.0+"
+  },
+  "files": {
+    "skill": "SKILL.md",
+    "scripts": ["scripts/task.sh", "scripts/create-workflow.sh"],
+    "references": ["references/framework-guide.md", "references/step-template.md"],
+    "templates": ["assets/templates/input.md", "assets/templates/output-template.md"],
+    "rules": ["assets/rules/general.md"]
+  }
+}
