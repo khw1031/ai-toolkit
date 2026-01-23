@@ -231,10 +231,10 @@ PathResolver (Registry에서 경로 가져오기)
 
 | 번호 | 제목 | 우선순위 | 복잡도 | 의존성 | 상태 |
 |------|------|----------|--------|--------|------|
-| 04 | CommandHandler 구현 | P0 | Medium | 03 | pending |
-| 05 | PathResolver 구현 | P0 | Low | 02 | pending |
-| 06 | GitHubResolver 구현 | P0 | High | 03 | pending |
-| 07 | LocalResolver 구현 | P0 | Low | 03 | pending |
+| 04 | CommandHandler 구현 | P0 | Medium | 03 | ✅ completed |
+| 05 | PathResolver 구현 | P0 | Low | 02 | ✅ completed |
+| 06 | GitHubResolver 구현 | P0 | High | 03 | ✅ completed |
+| 07 | LocalResolver 구현 | P0 | Low | 03 | ✅ completed |
 
 **병렬 가능**: 06, 07 (03 의존 후 동시 진행)
 
@@ -312,17 +312,20 @@ graph TD
 ### 전체 진행률
 
 - [x] Phase 1: Monorepo 초기화 (3/3) ✅
-- [ ] Phase 2: 핵심 모듈 구현 (0/4)
+- [ ] Phase 2: 핵심 모듈 구현 (3/4)
 - [ ] Phase 3: 파싱 및 설치 (0/2)
 - [ ] Phase 4: 고급 기능 (0/6)
 - [ ] Phase 5: 배포 (0/1)
 
-**총 진행률**: 3/16 (18.75%)
+**총 진행률**: 6/16 (37.5%)
 
 ### 최근 업데이트
 
 | 날짜 | 작업 | 담당자 | 상태 |
 |------|------|--------|------|
+| 2026-01-24 | Task 07: LocalResolver 구현 | AI | ✅ completed |
+| 2026-01-24 | Task 05: PathResolver 구현 | AI | ✅ completed |
+| 2026-01-24 | Task 04: CommandHandler 구현 | AI | ✅ completed |
 | 2026-01-23 | Task 03: CLI 패키지 기반 구조 | AI | ✅ completed |
 | 2026-01-23 | Task 02: Registry 패키지 구현 | AI | ✅ completed |
 | 2026-01-23 | Task 01: Turborepo Monorepo 초기화 | AI | ✅ completed |
@@ -403,4 +406,4 @@ cat .ai/tasks/AI-TOOLKIT-001/todos/01-TASK.md
 
 ---
 
-**최종 업데이트**: 2026-01-23
+**최종 업데이트**: 2026-01-24
