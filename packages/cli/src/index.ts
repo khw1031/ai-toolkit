@@ -1,11 +1,10 @@
-/**
- * AI Toolkit CLI
- * Universal AI agent resource installer
- */
+#!/usr/bin/env node
+
+import { CommandHandler } from './commands/CommandHandler';
 
 export async function main(): Promise<void> {
-  console.log('AI Toolkit CLI - Coming soon');
-  // CommandHandler will be implemented in Task 04
+  const handler = new CommandHandler();
+  await handler.run(process.argv);
 }
 
 // Run CLI if executed directly
