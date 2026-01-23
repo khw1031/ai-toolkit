@@ -1,0 +1,104 @@
+{
+  "claude-code": {
+    "name": "Claude Code",
+    "paths": {
+      "project": {
+        "skills": ".claude/skills/",
+        "rules": ".claude/rules/",
+        "commands": ".claude/commands/",
+        "agents": ".claude/agents/"
+      },
+      "global": {
+        "skills": "~/.claude/skills/",
+        "rules": "~/.claude/rules/",
+        "commands": "~/.claude/commands/",
+        "agents": "~/.claude/agents/"
+      }
+    }
+  },
+  "cursor": {
+    "name": "Cursor",
+    "paths": {
+      "project": {
+        "skills": ".cursor/skills/",
+        "rules": ".cursor/rules/",
+        "commands": ".cursor/commands/",
+        "agents": ".cursor/agents/"
+      },
+      "global": {
+        "skills": "~/.cursor/skills/",
+        "rules": "~/.cursor/rules/",
+        "commands": "~/.cursor/commands/",
+        "agents": "~/.cursor/agents/"
+      }
+    }
+  },
+  "antigravity": {
+    "name": "Antigravity",
+    "paths": {
+      "project": {
+        "skills": ".agent/skills/",
+        "rules": ".agent/rules/",
+        "commands": ".agent/commands/",
+        "agents": ".agent/agents/"
+      },
+      "global": {
+        "skills": "~/.gemini/antigravity/skills/",
+        "rules": "~/.gemini/antigravity/rules/",
+        "commands": "~/.gemini/antigravity/commands/",
+        "agents": "~/.gemini/antigravity/agents/"
+      }
+    }
+  },
+  "gemini-cli": {
+    "name": "Gemini CLI",
+    "paths": {
+      "project": {
+        "skills": ".gemini/skills/",
+        "rules": ".gemini/rules/",
+        "commands": ".gemini/commands/",
+        "agents": ".gemini/agents/"
+      },
+      "global": {
+        "skills": "~/.gemini/skills/",
+        "rules": "~/.gemini/rules/",
+        "commands": "~/.gemini/commands/",
+        "agents": "~/.gemini/agents/"
+      }
+    }
+  },
+  "github-copilot": {
+    "name": "GitHub Copilot",
+    "paths": {
+      "project": {
+        "skills": ".github/skills/",
+        "rules": ".github/rules/",
+        "commands": ".github/commands/",
+        "agents": ".github/agents/"
+      },
+      "global": {
+        "skills": "~/.copilot/skills/",
+        "rules": "~/.copilot/rules/",
+        "commands": "~/.copilot/commands/",
+        "agents": "~/.copilot/agents/"
+      }
+    }
+  },
+  "opencode": {
+    "name": "OpenCode",
+    "paths": {
+      "project": {
+        "skills": ".opencode/skills/",
+        "rules": ".opencode/rules/",
+        "commands": ".opencode/commands/",
+        "agents": ".opencode/agents/"
+      },
+      "global": {
+        "skills": "~/.config/opencode/skills/",
+        "rules": "~/.config/opencode/rules/",
+        "commands": "~/.config/opencode/commands/",
+        "agents": "~/.config/opencode/agents/"
+      }
+    }
+  }
+}
