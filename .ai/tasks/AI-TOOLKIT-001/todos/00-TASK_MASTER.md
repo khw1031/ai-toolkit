@@ -246,8 +246,8 @@ PathResolver (Registry에서 경로 가져오기)
 
 | 번호 | 제목 | 우선순위 | 복잡도 | 의존성 | 상태 |
 |------|------|----------|--------|--------|------|
-| 08 | ResourceParser 구현 | P0 | Medium | 06, 07 | pending |
-| 09 | InstallManager 기본 구현 | P0 | Medium | 05, 08 | pending |
+| 08 | ResourceParser 구현 | P0 | Medium | 06, 07 | ✅ completed |
+| 09 | InstallManager 기본 구현 | P0 | Medium | 05, 08 | ✅ completed |
 
 **완료 조건**: GitHub repo에서 스킬 설치 성공, 중복 Skip/Overwrite 동작
 
@@ -257,12 +257,12 @@ PathResolver (Registry에서 경로 가져오기)
 
 | 번호 | 제목 | 우선순위 | 복잡도 | 의존성 | 상태 |
 |------|------|----------|--------|--------|------|
-| 10 | InteractivePrompt 구현 | P1 | Medium | 04 | pending |
-| 11 | BitbucketResolver 구현 | P1 | Medium | 03 | pending |
-| 12 | URLResolver 구현 | P1 | Low | 03 | pending |
-| 13 | Rename & Backup 구현 | P1 | Medium | 09 | pending |
+| 10 | InteractivePrompt 구현 | P1 | Medium | 04 | ✅ completed |
+| 11 | BitbucketResolver 구현 | P1 | Medium | 03 | ✅ completed |
+| 12 | URLResolver 구현 | P1 | Low | 03 | ✅ completed |
+| 13 | Rename & Backup 구현 | P1 | Medium | 09 | ✅ completed |
 | 14 | Compare & BatchHandler 구현 | P1 | High | 09 | pending |
-| 15 | Logger 및 결과 출력 | P2 | Low | 09 | pending |
+| 15 | Logger 및 결과 출력 | P2 | Low | 09 | ✅ completed |
 
 **병렬 가능**: 11, 12, 13, 14 (각각의 의존성 충족 후)
 
@@ -313,16 +313,23 @@ graph TD
 
 - [x] Phase 1: Monorepo 초기화 (3/3) ✅
 - [x] Phase 2: 핵심 모듈 구현 (4/4) ✅
-- [ ] Phase 3: 파싱 및 설치 (0/2)
-- [ ] Phase 4: 고급 기능 (0/6)
+- [x] Phase 3: 파싱 및 설치 (2/2) ✅
+- [ ] Phase 4: 고급 기능 (5/6)
 - [ ] Phase 5: 배포 (0/1)
 
-**총 진행률**: 7/16 (43.75%)
+**총 진행률**: 13/16 (81%)
 
 ### 최근 업데이트
 
 | 날짜 | 작업 | 담당자 | 상태 |
 |------|------|--------|------|
+| 2026-01-24 | Task 13: Rename & Backup 구현 | AI | ✅ completed |
+| 2026-01-24 | Task 12: URLResolver 구현 | AI | ✅ completed |
+| 2026-01-24 | Task 15: Logger 및 결과 출력 | AI | ✅ completed |
+| 2026-01-24 | Task 11: BitbucketResolver 구현 | AI | ✅ completed |
+| 2026-01-24 | Task 10: InteractivePrompt 구현 | AI | ✅ completed |
+| 2026-01-24 | Task 09: InstallManager 기본 구현 | AI | ✅ completed |
+| 2026-01-24 | Task 08: ResourceParser 구현 | AI | ✅ completed |
 | 2026-01-24 | Task 06: GitHubResolver 구현 | AI | ✅ completed |
 | 2026-01-24 | Task 07: LocalResolver 구현 | AI | ✅ completed |
 | 2026-01-24 | Task 05: PathResolver 구현 | AI | ✅ completed |
@@ -393,7 +400,7 @@ cat .ai/tasks/AI-TOOLKIT-001/todos/01-TASK.md
 
 - [x] Phase 1 완료: `pnpm turbo build` 성공 ✅
 - [x] Phase 2 완료: GitHub/로컬에서 파일 목록 가져오기 성공 ✅
-- [ ] Phase 3 완료: E2E 테스트 (GitHub → 로컬 설치) 통과
+- [x] Phase 3 완료: E2E 테스트 (GitHub → 로컬 설치) 통과 ✅
 - [ ] Phase 4 완료: 모든 중복 처리 전략 테스트 통과
 - [ ] Phase 5 완료: npm 배포 및 `npx @ai-toolkit/cli` 실행 성공
 

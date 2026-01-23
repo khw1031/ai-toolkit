@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { PathResolver } from '@ai-toolkit/registry';
 import { atomicWrite } from '../utils/fs-safe';
 import { isSameContent } from '../utils/hash';
+import { DuplicateHandler } from './DuplicateHandler';
 import type {
   AgentKey,
   ResourceType,
@@ -26,13 +27,17 @@ interface DuplicateInfo {
  * Handles resource installation with duplicate detection and handling strategies:
  * - Skip: Keep existing file
  * - Overwrite: Replace existing file
+ * - Rename: Create new file with incremented number (skill-2, skill-3)
+ * - Backup: Create .backup file before overwriting
  * - Auto-skip: Automatically skip if content is identical
  */
 export class InstallManager {
   private pathResolver: PathResolver;
+  private duplicateHandler: DuplicateHandler;
 
   constructor() {
     this.pathResolver = new PathResolver();
+    this.duplicateHandler = new DuplicateHandler();
   }
 
   /**
@@ -172,6 +177,7 @@ export class InstallManager {
 
     switch (onDuplicate) {
       case 'skip':
+        await this.duplicateHandler.skip();
         return {
           resourceName: request.resource.name,
           agent: request.agent,
@@ -181,7 +187,7 @@ export class InstallManager {
         };
 
       case 'overwrite':
-        await atomicWrite(targetPath, request.resource.content);
+        await this.duplicateHandler.overwrite(targetPath, request.resource.content);
         return {
           resourceName: request.resource.name,
           agent: request.agent,
@@ -190,16 +196,56 @@ export class InstallManager {
           path: targetPath,
         };
 
+      case 'rename': {
+        const newPath = await this.duplicateHandler.rename(
+          targetPath,
+          request.resource.content
+        );
+        return {
+          resourceName: request.resource.name,
+          agent: request.agent,
+          success: true,
+          action: 'renamed',
+          path: newPath,
+          renamedTo: newPath,
+        };
+      }
+
+      case 'backup': {
+        const backupPath = await this.duplicateHandler.backup(
+          targetPath,
+          request.resource.content
+        );
+        return {
+          resourceName: request.resource.name,
+          agent: request.agent,
+          success: true,
+          action: 'backed-up',
+          path: targetPath,
+          backupPath,
+        };
+      }
+
       case 'fail':
         throw new Error(`File already exists: ${targetPath}`);
 
-      case 'rename':
-      case 'backup':
-      case 'compare':
-        // Will be implemented in Task 13, 14
-        throw new Error(
-          `${onDuplicate} is not implemented yet (Task 13, 14)`
+      case 'compare': {
+        // Show diff and let user choose action
+        const action = await this.duplicateHandler.compare(
+          targetPath,
+          duplicate.existingContent,
+          request.resource.content,
+          request.resource.name
         );
+
+        // Recursively handle with the chosen action
+        const newRequest: InstallRequest = {
+          ...request,
+          onDuplicate: action,
+        };
+
+        return await this.handleDuplicate(newRequest, duplicate, targetPath);
+      }
 
       default:
         throw new Error(`Unknown duplicate action: ${onDuplicate}`);
