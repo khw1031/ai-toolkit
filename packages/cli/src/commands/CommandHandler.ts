@@ -1,10 +1,14 @@
 import { Command as Commander } from 'commander';
-import type { Command } from '../types';
+import { getResourcesPath } from '@ai-toolkit/registry';
+import type { Command, AgentKey, Resource } from '../types';
 import { Logger } from '../utils/Logger';
 import { InteractivePrompt } from '../prompts/InteractivePrompt';
 import { GitHubResolver } from '../source/GitHubResolver';
 import { LocalResolver } from '../source/LocalResolver';
+// Phase2: import { BitbucketResolver } from '../source/BitbucketResolver';
+import { URLResolver } from '../source/URLResolver';
 import { ResourceParser } from '../parser/ResourceParser';
+import { InstallManager, type InstallRequest } from '../install/InstallManager';
 
 export class CommandHandler {
   private program: Commander;
@@ -88,8 +92,9 @@ export class CommandHandler {
   }
 
   private isInteractive(command: Command): boolean {
-    // Interactive if no type or source specified
-    return !command.type || !command.source;
+    // Interactive if no type or agents specified
+    // (source is optional - defaults to registry)
+    return !command.type || !command.agents || command.agents.length === 0;
   }
 
   private async runInteractive(_command: Command): Promise<void> {
@@ -119,12 +124,13 @@ export class CommandHandler {
 
   private detectSourceType(
     source: string
-  ): 'github' | 'bitbucket' | 'local' | 'url' {
+  ): 'github' | 'local' | 'url' {
+    // Phase2: Bitbucket support (requires authentication for private repos)
+    // if (source.includes('bitbucket.org')) {
+    //   return 'bitbucket';
+    // }
     if (source.includes('github.com') || /^[^\/]+\/[^\/]+$/.test(source)) {
       return 'github';
-    }
-    if (source.includes('bitbucket.org')) {
-      return 'bitbucket';
     }
     if (source.startsWith('http://') || source.startsWith('https://')) {
       return 'url';
@@ -137,13 +143,77 @@ export class CommandHandler {
     if (!command.type) {
       throw new Error('--skills, --rules, --commands, or --agents-resource is required');
     }
-    if (!command.source) {
-      throw new Error('--source is required');
+    if (!command.agents || command.agents.length === 0) {
+      throw new Error('--agents is required (e.g., --agents=claude-code,cursor)');
     }
 
+    // Default to registry resources if no source specified
+    const source = command.source || getResourcesPath();
+    const isDefaultSource = !command.source;
+
     this.logger.info(`Resource type: ${command.type}`);
-    this.logger.info(`Source: ${command.source}`);
-    this.logger.info('Source resolution will be implemented in Task 06-07');
-    // TODO: Implement in subsequent tasks
+    this.logger.info(`Source: ${source}${isDefaultSource ? ' (default registry)' : ''}`);
+    this.logger.info(`Agents: ${command.agents.join(', ')}`);
+    this.logger.info(`Scope: ${command.scope || 'project'}`);
+
+    // 1. Resolve source
+    this.logger.startProgress('Resolving source...');
+    const sourceType = this.detectSourceType(source);
+    const resolver = this.getResolver(sourceType);
+    const sourceFiles = await resolver.resolve(source, command.type);
+    this.logger.succeedProgress(`Found ${sourceFiles.length} files`);
+
+    if (sourceFiles.length === 0) {
+      this.logger.warn('No resources found in the source');
+      return;
+    }
+
+    // 2. Parse resources
+    this.logger.startProgress('Parsing resources...');
+    const parser = new ResourceParser();
+    const resources = parser.parseResources(sourceFiles, command.type);
+    this.logger.succeedProgress(`Parsed ${resources.length} resources`);
+
+    if (resources.length === 0) {
+      this.logger.warn('No valid resources found');
+      return;
+    }
+
+    // 3. Build install requests
+    const requests: InstallRequest[] = [];
+    for (const resource of resources) {
+      for (const agent of command.agents as AgentKey[]) {
+        requests.push({
+          resource,
+          agent,
+          scope: (command.scope as 'project' | 'global') || 'project',
+          onDuplicate: command.onDuplicate || 'skip',
+        });
+      }
+    }
+
+    // 4. Install
+    this.logger.startProgress(`Installing ${resources.length} resources to ${command.agents.length} agents...`);
+    const installManager = new InstallManager();
+    const results = await installManager.install(requests);
+    this.logger.succeedProgress('Installation complete');
+
+    // 5. Display results
+    this.logger.displayResults(results);
+  }
+
+  private getResolver(sourceType: 'github' | 'local' | 'url') {
+    switch (sourceType) {
+      case 'github':
+        return new GitHubResolver();
+      // Phase2: Bitbucket support
+      // case 'bitbucket':
+      //   return new BitbucketResolver();
+      case 'url':
+        return new URLResolver();
+      case 'local':
+      default:
+        return new LocalResolver();
+    }
   }
 }

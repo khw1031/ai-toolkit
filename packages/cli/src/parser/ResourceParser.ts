@@ -32,6 +32,13 @@ export class ResourceParser {
       },
     };
 
+    // Include sibling files (scripts/, references/, assets/, etc.)
+    if (file.siblingFiles && file.siblingFiles.length > 0) {
+      resource.directory = {
+        files: file.siblingFiles,
+      };
+    }
+
     return resource;
   }
 

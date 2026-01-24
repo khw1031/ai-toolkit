@@ -4,7 +4,19 @@
       "mcp__acp__Write",
       "mcp__acp__Bash",
       "mcp__acp__Edit",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(tree:*)",
+      "Bash(head:*)",
+      "Bash(wc:*)",
+      "Bash(pnpm turbo build:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat/AI-TOOLKIT-001-[AI]: Add Turborepo monorepo structure\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(pnpm install)",
+      "Bash(pnpm --filter @ai-toolkit/registry test)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat/AI-TOOLKIT-001-[AI]: Implement CommandHandler with flag parsing\n\n- Add commander and chalk dependencies to CLI package\n- Implement CommandHandler class with all required flags:\n  - Type flags: --skills, --rules, --commands, --agents-resource\n  - Option flags: --source, --on-duplicate, --yes, --scope, --agents\n- Add interactive vs non-interactive mode detection\n- Update src/index.ts to use CommandHandler\n- Add comprehensive unit tests \\(9 test cases, all passing\\)\n- Verified --help output and manual testing\n\nTask 04 completed. Ready for Task 10 \\(InteractivePrompt\\) and Tasks 06-07 \\(Source Resolution\\).\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(pnpm --filter @ai-toolkit/cli build:*)",
+      "Bash(pnpm --filter @ai-toolkit/cli test:*)",
+      "WebSearch"
     ]
   }
 }

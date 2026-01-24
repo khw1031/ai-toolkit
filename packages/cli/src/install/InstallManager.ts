@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
 import { PathResolver } from '@ai-toolkit/registry';
 import { atomicWrite } from '../utils/fs-safe';
 import { isSameContent } from '../utils/hash';
@@ -99,6 +99,12 @@ export class InstallManager {
     // Create new file
     await atomicWrite(targetPath, request.resource.content);
 
+    // Copy sibling files (scripts/, references/, assets/, etc.)
+    if (request.resource.directory?.files) {
+      const targetDir = dirname(targetPath);
+      await this.copySiblingFiles(request.resource.directory.files, targetDir);
+    }
+
     return {
       resourceName: request.resource.name,
       agent: request.agent,
@@ -106,6 +112,16 @@ export class InstallManager {
       action: 'created',
       path: targetPath,
     };
+  }
+
+  /**
+   * Copy sibling files to target directory
+   */
+  private async copySiblingFiles(files: { path: string; content: string }[], targetDir: string): Promise<void> {
+    for (const file of files) {
+      const targetPath = join(targetDir, file.path);
+      await atomicWrite(targetPath, file.content);
+    }
   }
 
   /**

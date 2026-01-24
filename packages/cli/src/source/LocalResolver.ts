@@ -97,10 +97,13 @@ export class LocalResolver {
             files.push(...subFiles);
           } else if (entry.isFile() && entry.name === filename) {
             const content = await readFile(fullPath, 'utf-8');
+            // Get all files in the same directory (for skills with scripts/, references/, etc.)
+            const siblingFiles = await this.getAllFilesInDirectory(dirPath);
             files.push({
               path: fullPath,
               content,
               isDirectory: false,
+              siblingFiles, // Include all sibling files
             });
           } else if (entry.isSymbolicLink()) {
             // Follow symlinks carefully
@@ -134,5 +137,45 @@ export class LocalResolver {
       agent: 'AGENT.md',
     };
     return filenames[type];
+  }
+
+  /**
+   * Get all files in a directory recursively
+   * Used to collect sibling files (scripts/, references/, assets/, etc.)
+   */
+  private async getAllFilesInDirectory(dirPath: string): Promise<SourceFile[]> {
+    const files: SourceFile[] = [];
+
+    const collectFiles = async (currentPath: string, relativePath: string = ''): Promise<void> => {
+      try {
+        const entries = await readdir(currentPath, { withFileTypes: true });
+
+        for (const entry of entries) {
+          // Skip hidden files
+          if (entry.name.startsWith('.')) {
+            continue;
+          }
+
+          const fullPath = join(currentPath, entry.name);
+          const relPath = relativePath ? join(relativePath, entry.name) : entry.name;
+
+          if (entry.isDirectory()) {
+            await collectFiles(fullPath, relPath);
+          } else if (entry.isFile()) {
+            const content = await readFile(fullPath, 'utf-8');
+            files.push({
+              path: relPath, // Relative path from skill directory
+              content,
+              isDirectory: false,
+            });
+          }
+        }
+      } catch (error: any) {
+        console.warn(`Failed to read directory ${currentPath}: ${error.message}`);
+      }
+    };
+
+    await collectFiles(dirPath);
+    return files;
   }
 }

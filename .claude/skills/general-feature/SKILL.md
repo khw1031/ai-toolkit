@@ -2,16 +2,20 @@
 name: general-feature
 description: |
   일반적인 기능 구현을 위한 단계별 워크플로우를 제공합니다.
+  .ai/tasks/ 디렉토리 구조를 사용하여 작업을 체계적으로 관리합니다.
 
   새 기능 구현 시:
-  - 기능 구현, 새 기능, 기능 추가, 신규 개발, 기능 개발
-  - feature implementation, new feature, add feature
+  - 기능 구현, 기능 개발, 기능 추가, 새 기능, 신규 개발
+  - 기능 구현해줘, 기능 개발해줘, 구현해줘
+  - feature, implement, new feature, add feature
 
-  작업 재개 시 (티켓 번호 패턴 포함):
-  - "PROJ-001 작업 이어서", "AI-TOOLKIT-001 진행", "FEAT-123 계속"
-  - 작업 이어서, 작업 계속, 작업 진행, 다음 단계, 이어서 진행
-  - resume task, continue work, proceed, next step
-  - .ai/tasks/ 디렉토리 작업 관리
+  작업 재개 시 (티켓 번호 패턴: XXXX-NNN 형식):
+  - TASK-001 이어서, AI-TOOLKIT-001 진행, PROJ-001 계속, FEAT-123 시작
+  - 작업 이어서, 작업 계속, 작업 진행, 다음 단계, 이어서 해줘
+  - resume, continue, proceed, next step
+
+  .ai/tasks 관련:
+  - .ai/tasks 확인, 작업 상태, task status, 진행 상황
 license: MIT
 metadata:
   author: ai-toolkit

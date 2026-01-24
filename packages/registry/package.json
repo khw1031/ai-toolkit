@@ -13,7 +13,8 @@
   },
   "files": [
     "dist",
-    "data"
+    "data",
+    "resources"
   ],
   "scripts": {
     "build": "tsdown",

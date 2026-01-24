@@ -290,23 +290,23 @@ describe('BitbucketResolver', () => {
 
 ### 구현 전
 
-- [ ] Task 03 완료 확인
+- [x] Task 03 완료 확인
 
 ### 구현 중
 
-- [ ] BitbucketResolver.ts 구현
-- [ ] parseSource() 메서드 구현
-- [ ] getDefaultBranch() 메서드 구현
-- [ ] fetchTree() 메서드 구현 (pagination)
-- [ ] filterByType() 메서드 구현
-- [ ] downloadFiles() 메서드 구현
-- [ ] BitbucketResolver.test.ts 작성
+- [x] BitbucketResolver.ts 구현
+- [x] parseSource() 메서드 구현
+- [x] getDefaultBranch() 메서드 구현
+- [x] fetchTree() 메서드 구현 (pagination)
+- [x] filterByType() 메서드 구현
+- [x] downloadFiles() 메서드 구현
+- [x] BitbucketResolver.test.ts 작성
 
 ### 구현 후
 
-- [ ] `pnpm --filter @ai-toolkit/cli build` 성공
-- [ ] `pnpm --filter @ai-toolkit/cli test` 테스트 통과
-- [ ] Bitbucket API 동작 확인
+- [x] `pnpm --filter @ai-toolkit/cli build` 성공
+- [x] `pnpm --filter @ai-toolkit/cli test` 테스트 통과 (BitbucketResolver: 23/23)
+- [x] Bitbucket API 동작 확인
 
 ---
 

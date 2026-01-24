@@ -1,3 +1,11 @@
+/**
+ * Phase2: Bitbucket Support
+ *
+ * TODO: Implement authentication for private repositories
+ * - App Password authentication
+ * - OAuth 2.0 support
+ * - Git clone fallback for SSH access
+ */
 import type { ResourceType, SourceFile } from '../types';
 
 interface BitbucketSource {
@@ -47,8 +55,18 @@ export class BitbucketResolver {
    * - owner/repo@branch
    * - https://bitbucket.org/owner/repo
    * - https://bitbucket.org/owner/repo/src/branch
+   * - git@bitbucket.org:owner/repo.git
    */
   parseSource(source: string): BitbucketSource {
+    // SSH format: git@bitbucket.org:owner/repo.git
+    const sshMatch = source.match(/git@bitbucket\.org:([^\/]+)\/(.+?)(\.git)?$/);
+    if (sshMatch) {
+      return {
+        owner: sshMatch[1],
+        repo: sshMatch[2],
+      };
+    }
+
     // URL format with branch
     const urlWithBranchMatch = source.match(
       /bitbucket\.org\/([^\/]+)\/([^\/]+)\/src\/([^\/]+)/

@@ -33,6 +33,8 @@ export interface SourceFile {
   path: string;
   content: string;
   isDirectory: boolean;
+  /** Sibling files in the same resource directory (scripts/, references/, etc.) */
+  siblingFiles?: SourceFile[];
 }
 
 /**
