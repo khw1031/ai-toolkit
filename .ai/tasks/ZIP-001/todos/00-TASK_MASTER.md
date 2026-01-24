@@ -142,8 +142,8 @@ npx ai-toolkit --zip  # 테스트
 | 태스크 | 우선순위 | 상태 | 담당자 | 완료일 |
 |--------|----------|------|--------|--------|
 | 01-타입/의존성 | P0 | ✅ completed | Agent | 2026-01-24 |
-| 02-ZipExporter | P0 | pending | - | - |
-| 03-ZipPrompt | P1 | pending | - | - |
+| 02-ZipExporter | P0 | ✅ completed | Agent | 2026-01-24 |
+| 03-ZipPrompt | P1 | ✅ completed | Agent | 2026-01-24 |
 | 04-ZipHandler+통합 | P1 | pending | - | - |
 | 05-테스트/마무리 | P2 | pending | - | - |
 

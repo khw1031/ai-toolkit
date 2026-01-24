@@ -8,6 +8,7 @@ export type { BatchAction, ResultSummary } from "./install/BatchHandler.js";
 export { generateDiff, formatDiff, displayDiff } from "./utils/diff.js";
 export { PathResolver, pathResolver } from "./path/index.js";
 export { CommandHandler, commandHandler } from "./commands/CommandHandler.js";
+export { ZipExporter, zipExporter } from "./export/index.js";
 
 export async function main(): Promise<void> {
   await commandHandler.run();
