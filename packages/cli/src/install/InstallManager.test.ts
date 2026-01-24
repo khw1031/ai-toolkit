@@ -23,7 +23,7 @@ describe('InstallManager', () => {
     it('should create new file', async () => {
       const resource: Resource = {
         name: 'test-skill',
-        type: 'skill',
+        type: 'skills',
         description: 'Test skill',
         path: 'test/SKILL.md',
         content: '---\nname: test-skill\n---\nTest',
@@ -53,7 +53,7 @@ describe('InstallManager', () => {
       const content = '---\nname: test\n---\nTest';
       const resource: Resource = {
         name: 'test-skill',
-        type: 'skill',
+        type: 'skills',
         description: 'Test',
         path: 'test/SKILL.md',
         content,
@@ -81,7 +81,7 @@ describe('InstallManager', () => {
     it('should skip duplicate when onDuplicate=skip', async () => {
       const resource1: Resource = {
         name: 'test-skill',
-        type: 'skill',
+        type: 'skills',
         description: 'Test',
         path: 'test/SKILL.md',
         content: '---\nname: test\n---\nOriginal',
@@ -121,7 +121,7 @@ describe('InstallManager', () => {
     it('should overwrite when onDuplicate=overwrite', async () => {
       const resource1: Resource = {
         name: 'test-skill',
-        type: 'skill',
+        type: 'skills',
         description: 'Test',
         path: 'test/SKILL.md',
         content: '---\nname: test\n---\nOriginal',
@@ -161,7 +161,7 @@ describe('InstallManager', () => {
     it('should fail when onDuplicate=fail', async () => {
       const resource1: Resource = {
         name: 'test-skill',
-        type: 'skill',
+        type: 'skills',
         description: 'Test',
         path: 'test/SKILL.md',
         content: '---\nname: test\n---\nOriginal',
@@ -199,7 +199,7 @@ describe('InstallManager', () => {
       const resources: Resource[] = [
         {
           name: 'skill1',
-          type: 'skill',
+          type: 'skills',
           description: 'Skill 1',
           path: 'skill1/SKILL.md',
           content: '---\nname: skill1\n---\nSkill 1',
@@ -207,7 +207,7 @@ describe('InstallManager', () => {
         },
         {
           name: 'skill2',
-          type: 'skill',
+          type: 'skills',
           description: 'Skill 2',
           path: 'skill2/SKILL.md',
           content: '---\nname: skill2\n---\nSkill 2',
@@ -234,7 +234,7 @@ describe('InstallManager', () => {
     it('should rename when onDuplicate=rename', async () => {
       const resource1: Resource = {
         name: 'test-skill',
-        type: 'skill',
+        type: 'skills',
         description: 'Test',
         path: 'test/SKILL.md',
         content: '---\nname: test\n---\nV1',
@@ -276,7 +276,7 @@ describe('InstallManager', () => {
     it('should backup when onDuplicate=backup', async () => {
       const resource1: Resource = {
         name: 'test-skill',
-        type: 'skill',
+        type: 'skills',
         description: 'Test',
         path: 'test/SKILL.md',
         content: '---\nname: test\n---\nOriginal',
@@ -322,7 +322,7 @@ describe('InstallManager', () => {
     it('should create numbered backups for multiple backup operations', async () => {
       const baseResource: Resource = {
         name: 'test-skill',
-        type: 'skill',
+        type: 'skills',
         description: 'Test',
         path: 'test/SKILL.md',
         content: '---\nname: test\n---\nV1',

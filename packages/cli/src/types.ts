@@ -1,7 +1,18 @@
-import type { ResourceType, AgentKey } from '@ai-toolkit/registry';
+import type { ResourceType, AgentKey, RegistryDirectory, AgentConfig, AgentPaths } from '@ai-toolkit/registry';
 
 // Re-export registry types
-export type { ResourceType, AgentKey };
+export type { ResourceType, AgentKey, RegistryDirectory, AgentConfig, AgentPaths };
+
+/**
+ * 인터랙티브 모드 결과
+ */
+export interface InteractiveResult {
+  agent: AgentKey;
+  directory: RegistryDirectory;
+  types: ResourceType[];
+  resources: Resource[];
+  scope: 'project' | 'global';
+}
 
 /**
  * 중복 처리 전략

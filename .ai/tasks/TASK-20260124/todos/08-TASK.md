@@ -258,20 +258,21 @@ pnpm test RegistryResolver.test.ts
 
 ### 구현 전
 
-- [ ] 07-TASK 완료 확인 (레거시 제거)
-- [ ] 테스트 프레임워크 설정 확인 (vitest)
+- [x] 07-TASK 완료 확인 (레거시 제거)
+- [x] 테스트 프레임워크 설정 확인 (vitest)
 
 ### 구현 중
 
-- [ ] PathResolver.test.ts 작성
-- [ ] RegistryResolver.test.ts 작성
-- [ ] README.md 업데이트
+- [x] PathResolver.test.ts 작성 (이미 존재, 18개 테스트 케이스)
+- [x] RegistryResolver.test.ts 작성 (이미 존재, 13개 테스트 케이스)
+- [x] CommandHandler.test.ts 리팩토링 (vi.hoisted 사용 6개 테스트 케이스)
+- [x] README.md 업데이트 (Agent별 지원 타입, 설치 경로, Interactive 플로우 등)
 
 ### 구현 후
 
-- [ ] 모든 테스트 통과
-- [ ] README 내용 정확성 확인
-- [ ] CLI 전체 플로우 수동 테스트
+- [x] 모든 테스트 통과 (122 passed)
+- [x] README 내용 정확성 확인
+- [ ] CLI 전체 플로우 수동 테스트 (사용자 확인 필요)
 
 ## 통합 포인트
 

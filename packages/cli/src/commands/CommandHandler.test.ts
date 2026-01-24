@@ -1,122 +1,176 @@
-import { describe, it, expect } from 'vitest';
-import { CommandHandler } from './CommandHandler';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { Resource, InteractiveResult } from '../types.js';
+
+// Mock dependencies - use vi.hoisted for hoisted mocks
+const mocks = vi.hoisted(() => {
+  const mockInstall = vi.fn();
+  const mockInteractiveRun = vi.fn();
+  const mockLoggerMethods = {
+    displayWelcome: vi.fn(),
+    displayCompletion: vi.fn(),
+    displayResults: vi.fn(),
+    startProgress: vi.fn(),
+    succeedProgress: vi.fn(),
+    info: vi.fn(),
+    error: vi.fn(),
+  };
+  return { mockInstall, mockInteractiveRun, mockLoggerMethods };
+});
+
+vi.mock('../prompts/InteractivePrompt.js', () => ({
+  interactivePrompt: {
+    run: mocks.mockInteractiveRun,
+  },
+}));
+
+vi.mock('../install/InstallManager.js', () => ({
+  InstallManager: vi.fn().mockImplementation(() => ({
+    install: mocks.mockInstall,
+  })),
+}));
+
+vi.mock('../utils/Logger.js', () => ({
+  Logger: vi.fn().mockImplementation(() => mocks.mockLoggerMethods),
+}));
+
+// Import after mocks are set up
+import { CommandHandler } from './CommandHandler.js';
 
 describe('CommandHandler', () => {
-  it('should parse --skills flag', async () => {
-    const handler = new CommandHandler();
-    // Mock console.log
-    const logs: any[][] = [];
-    const originalLog = console.log;
-    console.log = (...args: any[]) => logs.push(args);
+  let handler: CommandHandler;
 
-    await handler.run(['node', 'cli', '--skills', '--source=owner/repo']);
+  beforeEach(() => {
+    // Reset mock call history without removing implementations
+    mocks.mockInstall.mockClear();
+    mocks.mockInstall.mockResolvedValue([]);
+    mocks.mockInteractiveRun.mockClear();
+    Object.values(mocks.mockLoggerMethods).forEach(fn => fn.mockClear());
 
-    const output = JSON.stringify(logs);
-    expect(output).toContain('skill');
-    console.log = originalLog;
+    handler = new CommandHandler();
   });
 
-  it('should parse --rules flag', async () => {
-    const handler = new CommandHandler();
-    const logs: any[][] = [];
-    const originalLog = console.log;
-    console.log = (...args: any[]) => logs.push(args);
+  describe('run', () => {
+    it('should execute interactive flow and install resources', async () => {
+      const mockResource: Resource = {
+        name: 'test-skill',
+        description: 'Test skill',
+        type: 'skill',
+        content: 'test content',
+        version: '1.0.0',
+        files: [],
+      };
 
-    await handler.run(['node', 'cli', '--rules', '--source=owner/repo']);
+      const mockResult: InteractiveResult = {
+        agent: 'claude-code',
+        directory: 'common',
+        types: ['skills'],
+        resources: [mockResource],
+        scope: 'project',
+      };
 
-    const output = JSON.stringify(logs);
-    expect(output).toContain('rule');
-    console.log = originalLog;
-  });
+      mocks.mockInteractiveRun.mockResolvedValue(mockResult);
 
-  it('should parse --commands flag', async () => {
-    const handler = new CommandHandler();
-    const logs: any[][] = [];
-    const originalLog = console.log;
-    console.log = (...args: any[]) => logs.push(args);
+      await handler.run();
 
-    await handler.run(['node', 'cli', '--commands', '--source=owner/repo']);
+      expect(mocks.mockInteractiveRun).toHaveBeenCalledTimes(1);
+      expect(mocks.mockInstall).toHaveBeenCalledTimes(1);
+      expect(mocks.mockLoggerMethods.displayWelcome).toHaveBeenCalledTimes(1);
+      expect(mocks.mockLoggerMethods.displayCompletion).toHaveBeenCalledTimes(1);
+    });
 
-    const output = JSON.stringify(logs);
-    expect(output).toContain('command');
-    console.log = originalLog;
-  });
+    it('should handle installation cancellation', async () => {
+      mocks.mockInteractiveRun.mockRejectedValue(
+        new Error('Installation cancelled')
+      );
 
-  it('should parse --agents-resource flag', async () => {
-    const handler = new CommandHandler();
-    const logs: any[][] = [];
-    const originalLog = console.log;
-    console.log = (...args: any[]) => logs.push(args);
+      // Should not throw, just log info
+      await handler.run();
 
-    await handler.run(['node', 'cli', '--agents-resource', '--source=owner/repo']);
+      expect(mocks.mockInteractiveRun).toHaveBeenCalledTimes(1);
+      expect(mocks.mockLoggerMethods.info).toHaveBeenCalledWith('Installation cancelled');
+    });
 
-    const output = JSON.stringify(logs);
-    expect(output).toContain('agent');
-    console.log = originalLog;
-  });
+    it('should throw error on unexpected failures', async () => {
+      mocks.mockInteractiveRun.mockRejectedValue(new Error('Network error'));
 
-  it('should enable interactive mode when no type specified', async () => {
-    const handler = new CommandHandler();
-    const logs: any[][] = [];
-    const originalLog = console.log;
-    console.log = (...args: any[]) => logs.push(args);
+      await expect(handler.run()).rejects.toThrow('Network error');
+      expect(mocks.mockLoggerMethods.error).toHaveBeenCalledWith('Error: Network error');
+    });
 
-    await handler.run(['node', 'cli']);
+    it('should create install requests with correct structure', async () => {
+      const mockResource: Resource = {
+        name: 'test-skill',
+        description: 'Test skill',
+        type: 'skill',
+        content: 'test content',
+        version: '1.0.0',
+        files: [],
+      };
 
-    const output = JSON.stringify(logs);
-    expect(output).toContain('Interactive mode');
-    console.log = originalLog;
-  });
+      const mockResult: InteractiveResult = {
+        agent: 'cursor',
+        directory: 'frontend',
+        types: ['skills', 'rules'],
+        resources: [mockResource],
+        scope: 'global',
+      };
 
-  it('should enable interactive mode when no source specified', async () => {
-    const handler = new CommandHandler();
-    const logs: any[][] = [];
-    const originalLog = console.log;
-    console.log = (...args: any[]) => logs.push(args);
+      mocks.mockInteractiveRun.mockResolvedValue(mockResult);
 
-    await handler.run(['node', 'cli', '--skills']);
+      await handler.run();
 
-    const output = JSON.stringify(logs);
-    expect(output).toContain('Interactive mode');
-    console.log = originalLog;
-  });
+      // Verify install was called with correct structure
+      expect(mocks.mockInstall).toHaveBeenCalledTimes(1);
+      expect(mocks.mockInstall).toHaveBeenCalledWith([
+        {
+          resource: mockResource,
+          agent: 'cursor',
+          scope: 'global',
+          onDuplicate: 'compare',
+        },
+      ]);
+    });
 
-  it('should parse --yes flag and set onDuplicate to overwrite', async () => {
-    const handler = new CommandHandler();
-    const logs: any[][] = [];
-    const originalLog = console.log;
-    console.log = (...args: any[]) => logs.push(args);
+    it('should handle empty resources selection', async () => {
+      const mockResult: InteractiveResult = {
+        agent: 'github-copilot',
+        directory: 'app',
+        types: ['skills'],
+        resources: [],
+        scope: 'project',
+      };
 
-    await handler.run(['node', 'cli', '--skills', '--source=owner/repo', '--yes']);
+      mocks.mockInteractiveRun.mockResolvedValue(mockResult);
 
-    const output = JSON.stringify(logs);
-    expect(output).toContain('overwrite');
-    console.log = originalLog;
-  });
+      await handler.run();
 
-  it('should parse --agents flag and split by comma', async () => {
-    const handler = new CommandHandler();
-    const logs: any[][] = [];
-    const originalLog = console.log;
-    console.log = (...args: any[]) => logs.push(args);
+      expect(mocks.mockInteractiveRun).toHaveBeenCalledTimes(1);
+      expect(mocks.mockInstall).toHaveBeenCalledWith([]);
+    });
 
-    await handler.run(['node', 'cli', '--skills', '--source=owner/repo', '--agents=claude,cursor']);
+    it('should work with all supported agents', async () => {
+      const agents = ['claude-code', 'cursor', 'github-copilot', 'antigravity'] as const;
 
-    const output = JSON.stringify(logs);
-    expect(output).toContain('claude');
-    expect(output).toContain('cursor');
-    console.log = originalLog;
-  });
+      for (const agent of agents) {
+        // Clear for each iteration
+        mocks.mockInstall.mockClear();
+        mocks.mockInteractiveRun.mockClear();
 
-  it('should throw error when type is missing in non-interactive mode', async () => {
-    const handler = new CommandHandler();
-    const originalLog = console.log;
-    console.log = () => {}; // Suppress console.log
+        const mockResult: InteractiveResult = {
+          agent,
+          directory: 'common',
+          types: ['skills'],
+          resources: [],
+          scope: 'project',
+        };
 
-    // When no type is specified and source is provided, it goes to interactive mode
-    // So this test should NOT throw an error
-    await handler.run(['node', 'cli', '--source=owner/repo']);
+        mocks.mockInteractiveRun.mockResolvedValue(mockResult);
 
-    console.log = originalLog;
+        await handler.run();
+
+        expect(mocks.mockInteractiveRun).toHaveBeenCalledTimes(1);
+        expect(mocks.mockInstall).toHaveBeenCalledTimes(1);
+      }
+    });
   });
 });

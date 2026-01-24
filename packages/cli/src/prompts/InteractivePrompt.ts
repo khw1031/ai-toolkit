@@ -1,196 +1,231 @@
 import inquirer from 'inquirer';
-import { PathResolver } from '@ai-toolkit/registry';
-import type { ResourceType, AgentKey, Resource } from '../types';
-import type { BatchAction } from '../install/BatchHandler';
+import type {
+  AgentKey,
+  RegistryDirectory,
+  ResourceType,
+  Resource,
+  InteractiveResult,
+} from '../types.js';
+import { pathResolver } from '../path/PathResolver.js';
+import { registryResolver } from '../source/RegistryResolver.js';
+import type { BatchAction } from '../install/BatchHandler.js';
 
-export interface InteractiveResult {
-  type: ResourceType;
-  source: string;
-  resources: Resource[];
-  agents: AgentKey[];
-  scope: 'project' | 'global';
-}
-
+/**
+ * InteractivePrompt - 새 플로우로 리팩토링
+ *
+ * 플로우: Agent → Directory → Type → Resources → Scope → Confirm
+ *
+ * - Agent별 지원 타입 필터링 (PathResolver 연동)
+ * - Directory별 리소스 탐색 (RegistryResolver 연동)
+ */
 export class InteractivePrompt {
-  private pathResolver: PathResolver;
-
-  constructor() {
-    this.pathResolver = new PathResolver();
-  }
-
   /**
-   * Run interactive prompts
+   * Interactive 플로우 실행
    */
   async run(): Promise<InteractiveResult> {
     console.log('Welcome to AI Toolkit!\n');
 
-    const type = await this.selectType();
-    const source = await this.selectSource();
-    const agents = await this.selectAgents();
+    // 1. Agent 선택
+    const agent = await this.selectAgent();
+
+    // 2. Directory 선택
+    const directory = await this.selectDirectory();
+
+    // 3. Type 선택 (Agent 지원 타입만)
+    const types = await this.selectTypes(agent);
+
+    // 4. Resources 선택
+    const resources = await this.selectResources(directory, types);
+
+    // 5. Scope 선택
     const scope = await this.selectScope();
 
-    return {
-      type,
-      source,
-      resources: [], // Will be populated after source resolution
-      agents,
-      scope,
+    // 6. 확인
+    const confirmed = await this.confirmInstallation(agent, resources, scope);
+
+    if (!confirmed) {
+      throw new Error('Installation cancelled');
+    }
+
+    return { agent, directory, types, resources, scope };
+  }
+
+  /**
+   * Agent 선택
+   * PathResolver를 사용하여 지원 Agent 목록 조회
+   */
+  async selectAgent(): Promise<AgentKey> {
+    const agents = pathResolver.getAgents();
+
+    const { agent } = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'agent',
+        message: 'Select target agent:',
+        choices: agents.map((key) => ({
+          name: pathResolver.getAgentConfig(key).name,
+          value: key,
+        })),
+      },
+    ]);
+
+    return agent;
+  }
+
+  /**
+   * Directory 선택
+   * RegistryResolver를 사용하여 사용 가능한 디렉토리 조회
+   */
+  async selectDirectory(): Promise<RegistryDirectory> {
+    const directories = registryResolver.getDirectories();
+
+    const directoryDescriptions: Record<RegistryDirectory, string> = {
+      common: 'Common - General purpose resources',
+      frontend: 'Frontend - React, Vue, etc.',
+      app: 'App - Mobile, Desktop apps',
     };
-  }
 
-  /**
-   * Select resource type
-   */
-  async selectType(): Promise<ResourceType> {
-    const { type } = await inquirer.prompt([
+    const { directory } = await inquirer.prompt([
       {
         type: 'list',
-        name: 'type',
-        message: 'What do you want to install?',
-        choices: [
-          { name: 'Skills - AI agent capabilities', value: 'skill' },
-          { name: 'Rules - Coding guidelines', value: 'rule' },
-          { name: 'Commands - CLI commands', value: 'command' },
-          { name: 'Agents - Agent configurations', value: 'agent' },
-        ],
-      },
-    ]);
-    return type;
-  }
-
-  /**
-   * Select source
-   */
-  async selectSource(): Promise<string> {
-    const { sourceType } = await inquirer.prompt([
-      {
-        type: 'list',
-        name: 'sourceType',
-        message: 'Where do you want to install from?',
-        choices: [
-          { name: 'GitHub repository', value: 'github' },
-          { name: 'Local directory', value: 'local' },
-          { name: 'Bitbucket repository', value: 'bitbucket' },
-          { name: 'Direct URL', value: 'url' },
-        ],
+        name: 'directory',
+        message: 'Select resource directory:',
+        choices: directories.map((dir) => ({
+          name: directoryDescriptions[dir],
+          value: dir,
+        })),
       },
     ]);
 
-    const { source } = await inquirer.prompt([
+    return directory;
+  }
+
+  /**
+   * Type 선택 (Agent 지원 타입만 표시)
+   * PathResolver.getSupportedTypes()를 사용하여 Agent별 지원 타입 필터링
+   */
+  async selectTypes(agent: AgentKey): Promise<ResourceType[]> {
+    const supportedTypes = pathResolver.getSupportedTypes(agent);
+
+    const typeDescriptions: Record<ResourceType, string> = {
+      skills: 'Skills - Reusable prompts and instructions',
+      rules: 'Rules - Project guidelines and standards',
+      commands: 'Commands - Custom slash commands',
+      agents: 'Agents - Specialized agent configurations',
+    };
+
+    const { types } = await inquirer.prompt([
       {
-        type: 'input',
-        name: 'source',
-        message: this.getSourcePromptMessage(sourceType),
-        validate: (input: string) => {
-          if (!input || input.trim().length === 0) {
-            return 'Source cannot be empty';
+        type: 'checkbox',
+        name: 'types',
+        message: `Select resource types (${pathResolver.getAgentConfig(agent).name} supports):`,
+        choices: supportedTypes.map((type) => ({
+          name: typeDescriptions[type],
+          value: type,
+          checked: type === 'skills', // skills 기본 선택
+        })),
+        validate: (input: ResourceType[]) => {
+          if (input.length === 0) {
+            return 'Please select at least one type';
           }
           return true;
         },
       },
     ]);
 
-    return source;
+    return types;
   }
 
   /**
-   * Get source prompt message
+   * Resources 선택
+   * RegistryResolver.resolve()를 사용하여 디렉토리별 리소스 탐색
    */
-  private getSourcePromptMessage(sourceType: string): string {
-    const messages: Record<string, string> = {
-      github: 'Enter GitHub repository (owner/repo):',
-      bitbucket: 'Enter Bitbucket repository (owner/repo):',
-      local: 'Enter local directory path:',
-      url: 'Enter direct URL to resource file:',
-    };
-    return messages[sourceType] || 'Enter source:';
-  }
+  async selectResources(
+    directory: RegistryDirectory,
+    types: ResourceType[]
+  ): Promise<Resource[]> {
+    const availableResources = await registryResolver.resolve(directory, types);
 
-  /**
-   * Select resources from list
-   */
-  async selectResources(resources: Resource[]): Promise<Resource[]> {
-    if (resources.length === 0) {
-      console.log('\nNo resources found in the source.');
+    if (availableResources.length === 0) {
+      console.log('\nNo resources found in selected directory/types.');
       return [];
     }
 
-    const { selectedResources } = await inquirer.prompt([
+    const { resources } = await inquirer.prompt([
       {
         type: 'checkbox',
-        name: 'selectedResources',
+        name: 'resources',
         message: 'Select resources to install:',
-        choices: resources.map((r) => ({
-          name: `${r.name}${r.description ? ` - ${r.description}` : ''}`,
+        choices: availableResources.map((r) => ({
+          name: `[${r.type}] ${r.name} - ${r.description || 'No description'}`,
           value: r,
-          checked: false,
         })),
         validate: (input: Resource[]) => {
           if (input.length === 0) {
-            return 'You must select at least one resource';
+            return 'Please select at least one resource';
           }
           return true;
         },
       },
     ]);
 
-    return selectedResources;
+    return resources;
   }
 
   /**
-   * Select agents
-   */
-  async selectAgents(): Promise<AgentKey[]> {
-    const allAgents = this.pathResolver.getSupportedAgents();
-
-    const { agents } = await inquirer.prompt([
-      {
-        type: 'checkbox',
-        name: 'agents',
-        message: 'Select agents to install for:',
-        choices: allAgents.map((key) => ({
-          name: this.pathResolver.getAgentName(key),
-          value: key,
-          checked: false,
-        })),
-        validate: (input: AgentKey[]) => {
-          if (input.length === 0) {
-            return 'You must select at least one agent';
-          }
-          return true;
-        },
-      },
-    ]);
-
-    return agents;
-  }
-
-  /**
-   * Select scope
+   * Scope 선택
    */
   async selectScope(): Promise<'project' | 'global'> {
     const { scope } = await inquirer.prompt([
       {
         type: 'list',
         name: 'scope',
-        message: 'Where do you want to install?',
+        message: 'Select installation scope:',
         choices: [
-          {
-            name: 'Project - Current directory (.claude/, .cursor/, etc.)',
-            value: 'project',
-          },
-          {
-            name: 'Global - User home directory (~/.claude/, ~/.cursor/, etc.)',
-            value: 'global',
-          },
+          { name: 'Project - Install in current directory', value: 'project' },
+          { name: 'Global - Install in home directory', value: 'global' },
         ],
+        default: 'project',
       },
     ]);
+
     return scope;
   }
 
   /**
+   * 설치 확인
+   * 설치 요약 정보를 표시하고 사용자 확인을 받음
+   */
+  async confirmInstallation(
+    agent: AgentKey,
+    resources: Resource[],
+    scope: 'project' | 'global'
+  ): Promise<boolean> {
+    console.log('\n--- Installation Summary ---');
+    console.log(`Agent: ${pathResolver.getAgentConfig(agent).name}`);
+    console.log(`Scope: ${scope}`);
+    console.log(`Resources (${resources.length}):`);
+    resources.forEach((r) => {
+      const targetPath = pathResolver.resolveAgentPath(agent, r.type, scope);
+      console.log(`  - [${r.type}] ${r.name} → ${targetPath || 'Not supported'}`);
+    });
+    console.log('');
+
+    const { confirmed } = await inquirer.prompt([
+      {
+        type: 'confirm',
+        name: 'confirmed',
+        message: 'Proceed with installation?',
+        default: true,
+      },
+    ]);
+
+    return confirmed;
+  }
+
+  /**
    * Handle single duplicate
+   * 레거시 코드 호환성을 위해 유지
    */
   async handleDuplicate(
     resourceName: string
@@ -214,9 +249,7 @@ export class InteractivePrompt {
 
   /**
    * Handle batch duplicates - prompt for action to apply to all duplicates
-   *
-   * When multiple files already exist, this allows the user to choose
-   * a single action to apply to all of them instead of prompting for each.
+   * 레거시 코드 호환성을 위해 유지
    *
    * @param duplicateCount - Number of duplicate files detected
    * @returns The batch action to apply
@@ -238,27 +271,7 @@ export class InteractivePrompt {
 
     return action;
   }
-
-  /**
-   * Confirm installation
-   *
-   * @param resourceCount - Number of resources to install
-   * @param agentCount - Number of agents to install for
-   * @returns true if user confirms, false otherwise
-   */
-  async confirmInstallation(
-    resourceCount: number,
-    agentCount: number
-  ): Promise<boolean> {
-    const { confirmed } = await inquirer.prompt([
-      {
-        type: 'confirm',
-        name: 'confirmed',
-        message: `Install ${resourceCount} resource(s) for ${agentCount} agent(s)?`,
-        default: true,
-      },
-    ]);
-
-    return confirmed;
-  }
 }
+
+// Singleton instance export
+export const interactivePrompt = new InteractivePrompt();

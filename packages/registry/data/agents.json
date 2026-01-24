@@ -1,6 +1,7 @@
 {
   "claude-code": {
     "name": "Claude Code",
+    "supportedTypes": ["skills", "rules", "commands", "agents"],
     "paths": {
       "project": {
         "skills": ".claude/skills/",
@@ -18,86 +19,55 @@
   },
   "cursor": {
     "name": "Cursor",
+    "supportedTypes": ["skills", "rules", "commands"],
     "paths": {
       "project": {
         "skills": ".cursor/skills/",
         "rules": ".cursor/rules/",
         "commands": ".cursor/commands/",
-        "agents": ".cursor/agents/"
+        "agents": null
       },
       "global": {
         "skills": "~/.cursor/skills/",
         "rules": "~/.cursor/rules/",
         "commands": "~/.cursor/commands/",
-        "agents": "~/.cursor/agents/"
-      }
-    }
-  },
-  "antigravity": {
-    "name": "Antigravity",
-    "paths": {
-      "project": {
-        "skills": ".agent/skills/",
-        "rules": ".agent/rules/",
-        "commands": ".agent/commands/",
-        "agents": ".agent/agents/"
-      },
-      "global": {
-        "skills": "~/.gemini/antigravity/skills/",
-        "rules": "~/.gemini/antigravity/rules/",
-        "commands": "~/.gemini/antigravity/commands/",
-        "agents": "~/.gemini/antigravity/agents/"
-      }
-    }
-  },
-  "gemini-cli": {
-    "name": "Gemini CLI",
-    "paths": {
-      "project": {
-        "skills": ".gemini/skills/",
-        "rules": ".gemini/rules/",
-        "commands": ".gemini/commands/",
-        "agents": ".gemini/agents/"
-      },
-      "global": {
-        "skills": "~/.gemini/skills/",
-        "rules": "~/.gemini/rules/",
-        "commands": "~/.gemini/commands/",
-        "agents": "~/.gemini/agents/"
+        "agents": null
       }
     }
   },
   "github-copilot": {
     "name": "GitHub Copilot",
+    "supportedTypes": ["skills", "rules"],
     "paths": {
       "project": {
         "skills": ".github/skills/",
-        "rules": ".github/rules/",
-        "commands": ".github/commands/",
-        "agents": ".github/agents/"
+        "rules": ".github/instructions/",
+        "commands": null,
+        "agents": null
       },
       "global": {
         "skills": "~/.copilot/skills/",
-        "rules": "~/.copilot/rules/",
-        "commands": "~/.copilot/commands/",
-        "agents": "~/.copilot/agents/"
+        "rules": "~/.copilot/instructions/",
+        "commands": null,
+        "agents": null
       }
     }
   },
-  "opencode": {
-    "name": "OpenCode",
+  "antigravity": {
+    "name": "Antigravity",
+    "supportedTypes": ["skills", "rules", "commands"],
     "paths": {
       "project": {
-        "skills": ".opencode/skills/",
-        "rules": ".opencode/rules/",
-        "commands": ".opencode/commands/",
-        "agents": ".opencode/agents/"
+        "skills": ".agent/skills/",
+        "rules": ".agent/rules/",
+        "commands": ".agent/workflows/",
+        "agents": null
       },
       "global": {
-        "skills": "~/.config/opencode/skills/",
-        "rules": "~/.config/opencode/rules/",
-        "commands": "~/.config/opencode/commands/",
-        "agents": "~/.config/opencode/agents/"
+        "skills": "~/.gemini/antigravity/skills/",
+        "rules": "~/.gemini/antigravity/rules/",
+        "commands": "~/.gemini/antigravity/workflows/",
+        "agents": null
       }
     }
   }

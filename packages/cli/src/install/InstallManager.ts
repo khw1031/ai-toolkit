@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
-import { PathResolver } from '@ai-toolkit/registry';
+import { PathResolver } from '../path/PathResolver.js';
 import { atomicWrite } from '../utils/fs-safe';
 import { isSameContent } from '../utils/hash';
 import { DuplicateHandler } from './DuplicateHandler';
@@ -148,10 +148,10 @@ export class InstallManager {
    */
   private getResourceFilename(type: ResourceType): string {
     const filenames: Record<ResourceType, string> = {
-      skill: 'SKILL.md',
-      rule: 'RULES.md',
-      command: 'COMMANDS.md',
-      agent: 'AGENT.md',
+      skills: 'SKILL.md',
+      rules: 'RULES.md',
+      commands: 'COMMANDS.md',
+      agents: 'AGENT.md',
     };
     return filenames[type];
   }

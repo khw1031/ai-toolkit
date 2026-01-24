@@ -1,22 +1,12 @@
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+// PathResolver는 CLI 패키지로 이동됨 (packages/cli/src/path/PathResolver.ts)
+// CLI에서 직접 import하여 사용: import { pathResolver } from './path/index.js'
 
-export { PathResolver } from './PathResolver';
 export type {
   ResourceType,
   AgentKey,
+  RegistryDirectory,
   AgentPaths,
   AgentConfig,
   AgentRegistry,
-} from './types';
-export { default as agents } from '../data/agents.json';
-
-/**
- * Get the path to the bundled resources directory
- * Used as default source when --source is not specified
- */
-export function getResourcesPath(): string {
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = dirname(__filename);
-  return join(__dirname, '../resources');
-}
+} from "./types";
+export { default as agents } from "../data/agents.json";
