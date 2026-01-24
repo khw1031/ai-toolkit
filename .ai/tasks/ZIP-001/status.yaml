@@ -1,9 +1,9 @@
 task_id: ZIP-001
 workflow: general-feature
 status: running
-current_step: step-2
+current_step: step-3
 created_at: 2026-01-24T04:02:29Z
-updated_at: 2026-01-24T04:06:57Z
+updated_at: 2026-01-24T04:10:55Z
 steps:
   ## Step 상세 가이드:
     status: pending
