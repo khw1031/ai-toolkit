@@ -113,7 +113,3 @@ pnpm turbo build
 # 테스트
 pnpm test
 ```
-
-## 라이선스
-
-MIT

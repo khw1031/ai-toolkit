@@ -1,5 +1,5 @@
 {
-  "name": "@ai-toolkit/registry",
+  "name": "@hanssem/ai-registry",
   "version": "0.1.0",
   "description": "Agent registry and path resolver",
   "type": "module",
