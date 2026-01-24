@@ -22,4 +22,5 @@ steps:
     started_at: 2026-01-24T10:30:00Z
     completed_at: 2026-01-24T11:20:00Z
   step-5:
-    status: pending
+    status: in_progress
+    started_at: 2026-01-24T11:25:00Z
