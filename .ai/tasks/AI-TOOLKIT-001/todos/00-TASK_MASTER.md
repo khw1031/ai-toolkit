@@ -415,4 +415,45 @@ cat .ai/tasks/AI-TOOLKIT-001/todos/01-TASK.md
 
 ---
 
+## Step 4 종료 처리
+
+> **중요**: 모든 서브태스크가 completed 상태가 되면 아래 절차를 **반드시** 수행합니다.
+
+### 1. 완료 확인
+
+현재 상태: **15/16 완료 (94%)** - Phase 5 (Task 16: CI/CD)만 남음
+
+### 2. 40-output-implementation.md 생성 (필수)
+
+**출력 파일 위치**: `.ai/tasks/AI-TOOLKIT-001/40-output-implementation.md`
+
+**포함 내용**:
+- 요약: AI Toolkit CLI 구현 완료 내역
+- 구현 내역: Phase 1~4 구현 결과
+- 검증 결과: 체크리스트 항목별 상태
+- 변경 파일 목록: 전체 변경 파일 및 설명
+- 다음 단계: Step 5 검토 요청사항
+
+### 3. status.yaml 업데이트
+
+**출력물 생성 후에만** status.yaml을 업데이트:
+
+```yaml
+current_step: step-5
+steps:
+  step-4:
+    status: completed  # 40-output 생성 후 변경
+  step-5:
+    status: pending
+```
+
+### 4. Git 커밋
+
+```bash
+git add .ai/tasks/AI-TOOLKIT-001/40-output-implementation.md
+git commit -m "feat/AI-TOOLKIT-001-[AI]: Complete Step 4 - implementation summary"
+```
+
+---
+
 **최종 업데이트**: 2026-01-24
