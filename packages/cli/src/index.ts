@@ -15,7 +15,7 @@ export { ZipHandler, zipHandler } from "./commands/ZipHandler.js";
 
 // CLI 옵션 파싱
 program
-  .name('ai-toolkit')
+  .name('@hanssem/ai-toolkit')
   .description('AI Toolkit - Install and manage AI resources')
   .option('--zip', 'Export resources as ZIP file')
   .parse();

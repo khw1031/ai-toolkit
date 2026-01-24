@@ -39,10 +39,10 @@ export class RegistryResolver {
       }
     }
 
-    // Production environment: use @ai-toolkit/registry package
+    // Production environment: use @hanssem/ai-registry package
     try {
       // Try to find the registry package in node_modules
-      const registryIndexPath = this.resolvePackagePath('@ai-toolkit/registry');
+      const registryIndexPath = this.resolvePackagePath('@hanssem/ai-registry');
       if (registryIndexPath) {
         const resourcesPath = join(dirname(registryIndexPath), 'resources');
         if (existsSync(resourcesPath)) {
@@ -55,7 +55,7 @@ export class RegistryResolver {
 
     throw new Error(
       'Cannot find registry resources path. ' +
-        'Ensure @ai-toolkit/registry is properly installed.'
+        'Ensure @hanssem/ai-registry is properly installed.'
     );
   }
 

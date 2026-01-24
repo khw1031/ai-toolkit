@@ -5,13 +5,19 @@ AI Agent 리소스(Skills, Rules, Commands, Agents)를 쉽게 설치하는 CLI �
 ## 설치
 
 ```bash
-npm install -g @ai-toolkit/cli
+npm install -g @hanssem/ai-toolkit
 ```
 
 ## 사용법
 
 ```bash
-npx ai-toolkit
+npx @hanssem/ai-toolkit
+```
+
+### ZIP 내보내기
+
+```bash
+npx @hanssem/ai-toolkit --zip
 ```
 
 ## Interactive 플로우

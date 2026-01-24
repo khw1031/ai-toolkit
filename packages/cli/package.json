@@ -1,10 +1,10 @@
 {
-  "name": "@ai-toolkit/cli",
+  "name": "@hanssem/ai-toolkit",
   "version": "0.1.0",
   "description": "Universal AI agent resource installer CLI",
   "type": "module",
   "bin": {
-    "ai-toolkit": "./dist/index.mjs"
+    "@hanssem/ai-toolkit": "./dist/index.mjs"
   },
   "main": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -18,16 +18,18 @@
     "dev": "tsx ./src/index.ts"
   },
   "dependencies": {
-    "@ai-toolkit/registry": "workspace:*",
+    "@hanssem/ai-registry": "workspace:*",
     "@octokit/rest": "^20.0.0",
-    "commander": "^11.0.0",
+    "archiver": "^7.0.1",
     "chalk": "^5.0.0",
+    "commander": "^11.0.0",
     "diff": "^7.0.0",
     "inquirer": "^12.0.0",
     "ora": "^8.0.0",
     "yaml": "^2.3.0"
   },
   "devDependencies": {
+    "@types/archiver": "^7.0.0",
     "@types/diff": "^7.0.0",
     "@types/inquirer": "^9.0.0",
     "@types/node": "^24.0.0",

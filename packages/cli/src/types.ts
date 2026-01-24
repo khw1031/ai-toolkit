@@ -1,4 +1,4 @@
-import type { ResourceType, AgentKey, RegistryDirectory, AgentConfig, AgentPaths } from '@ai-toolkit/registry';
+import type { ResourceType, AgentKey, RegistryDirectory, AgentConfig, AgentPaths } from '@hanssem/ai-registry';
 
 // Re-export registry types
 export type { ResourceType, AgentKey, RegistryDirectory, AgentConfig, AgentPaths };
