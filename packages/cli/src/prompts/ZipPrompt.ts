@@ -1,87 +1,46 @@
 import inquirer from 'inquirer';
 import type {
-  RegistryDirectory,
   ResourceType,
   Resource,
   ZipPromptResult,
 } from '../types.js';
-import { registryResolver } from '../source/RegistryResolver.js';
 
 /**
  * ZipPrompt - ZIP 내보내기용 선택 플로우
  *
- * 플로우: Directories → Types → Resources → Confirm
- * (Agent, Scope 선택 없음)
+ * 플로우: Types → Resources → Confirm
  */
 export class ZipPrompt {
   /**
    * ZIP 플로우 실행
    */
-  async run(): Promise<ZipPromptResult> {
+  async run(availableResources: Resource[] = []): Promise<ZipPromptResult> {
     console.log('AI Toolkit - ZIP Export Mode\n');
 
-    // 1. 디렉토리 복수 선택
-    const directories = await this.selectDirectories();
-
-    // 2. 타입 선택
+    // 1. 타입 선택
     const types = await this.selectTypes();
 
-    // 3. 리소스 선택 (여러 디렉토리 합산)
-    const resources = await this.selectResources(directories, types);
+    // 2. 리소스 선택 (제공된 리소스 중 선택)
+    const resources = await this.selectResources(availableResources, types);
 
-    // 4. 확인
+    // 3. 확인
     const confirmed = await this.confirmExport(resources);
     if (!confirmed) {
       throw new Error('Export cancelled');
     }
 
-    return { directories, types, resources };
+    return { types, resources };
   }
 
   /**
-   * 디렉토리 복수 선택 (checkbox)
-   */
-  async selectDirectories(): Promise<RegistryDirectory[]> {
-    const directories = registryResolver.getDirectories();
-
-    const descriptions: Record<RegistryDirectory, string> = {
-      common: 'Common - General purpose resources',
-      frontend: 'Frontend - React, Vue, etc.',
-      app: 'App - Mobile, Desktop apps',
-    };
-
-    const { selected } = await inquirer.prompt([
-      {
-        type: 'checkbox',
-        name: 'selected',
-        message: 'Select directories to export from:',
-        choices: directories.map((dir) => ({
-          name: descriptions[dir],
-          value: dir,
-          checked: true, // 기본 전체 선택
-        })),
-        validate: (input: RegistryDirectory[]) => {
-          if (input.length === 0) {
-            return 'Please select at least one directory';
-          }
-          return true;
-        },
-      },
-    ]);
-
-    return selected;
-  }
-
-  /**
-   * 타입 복수 선택 (Agent 필터 없음)
+   * 타입 복수 선택
    */
   async selectTypes(): Promise<ResourceType[]> {
-    const allTypes: ResourceType[] = ['skills', 'rules', 'commands', 'agents'];
+    const allTypes: ResourceType[] = ['skills', 'rules', 'agents'];
 
     const descriptions: Record<ResourceType, string> = {
       skills: 'Skills - Reusable prompts and instructions',
       rules: 'Rules - Project guidelines and standards',
-      commands: 'Commands - Custom slash commands',
       agents: 'Agents - Specialized agent configurations',
     };
 
@@ -108,21 +67,19 @@ export class ZipPrompt {
   }
 
   /**
-   * 리소스 복수 선택 (여러 디렉토리 합산)
+   * 리소스 복수 선택
    */
   async selectResources(
-    directories: RegistryDirectory[],
+    availableResources: Resource[],
     types: ResourceType[]
   ): Promise<Resource[]> {
-    // 여러 디렉토리에서 리소스 수집
-    const allResources: Resource[] = [];
-    for (const dir of directories) {
-      const resources = await registryResolver.resolve(dir, types);
-      allResources.push(...resources);
-    }
+    // 선택된 타입으로 필터링
+    const filteredResources = availableResources.filter((r) =>
+      types.includes(r.type)
+    );
 
-    if (allResources.length === 0) {
-      console.log('\nNo resources found in selected directories/types.');
+    if (filteredResources.length === 0) {
+      console.log('\nNo resources found for selected types.');
       return [];
     }
 
@@ -131,7 +88,7 @@ export class ZipPrompt {
         type: 'checkbox',
         name: 'selected',
         message: 'Select resources to export:',
-        choices: allResources.map((r) => ({
+        choices: filteredResources.map((r) => ({
           name: `[${r.type}] ${r.name} - ${r.description || 'No description'}`,
           value: r,
         })),

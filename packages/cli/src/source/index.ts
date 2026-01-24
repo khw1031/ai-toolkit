@@ -1,6 +1,12 @@
 /**
- * Source resolvers for different resource locations
+ * Source parsing for different resource locations
  */
 
-// Registry resolver (bundled resources)
-export { RegistryResolver, registryResolver } from './RegistryResolver.js';
+// Source parser (GitHub, GitLab, Git URL, direct URL)
+export {
+  parseSource,
+  isDirectSkillUrl,
+  isDirectResourcePath,
+  getOwnerRepo,
+  getSourceDisplayName,
+} from './SourceParser.js';

@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
-import { join, dirname } from 'node:path';
+import { join, dirname, basename } from 'node:path';
 import { PathResolver } from '../path/PathResolver.js';
 import { atomicWrite } from '../utils/fs-safe';
 import { isSameContent } from '../utils/hash';
@@ -137,23 +137,11 @@ export class InstallManager {
       resource.type,
       scope
     );
-    const filename = this.getResourceFilename(resource.type);
+    // 원본 파일명 유지 (resource.path에서 추출)
+    const filename = basename(resource.path);
 
     // If resource has a specific directory name, use it
     return join(basePath, resource.name, filename);
-  }
-
-  /**
-   * Get resource filename
-   */
-  private getResourceFilename(type: ResourceType): string {
-    const filenames: Record<ResourceType, string> = {
-      skills: 'SKILL.md',
-      rules: 'RULES.md',
-      commands: 'COMMANDS.md',
-      agents: 'AGENT.md',
-    };
-    return filenames[type];
   }
 
   /**

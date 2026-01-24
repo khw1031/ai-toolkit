@@ -1,4 +1,4 @@
-# AI Toolkit CLI
+# add-ai-tools
 
 AI Agent 리소스(Skills, Rules, Commands, Agents)를 쉽게 설치하는 CLI 도구입니다.
 

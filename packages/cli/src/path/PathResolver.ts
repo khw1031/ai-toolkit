@@ -1,6 +1,6 @@
 import { homedir } from 'os';
 import { join } from 'path';
-import { agents as agentsData } from '@hanssem/ai-registry';
+import { agents as agentsData } from '../data/agents.js';
 import type { AgentKey, ResourceType, AgentConfig, AgentPaths } from '../types.js';
 
 /**

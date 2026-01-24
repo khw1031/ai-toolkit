@@ -11,11 +11,10 @@ describe('PathResolver', () => {
   });
 
   describe('getSupportedTypes', () => {
-    it('claude-code는 4개 타입 모두 지원', () => {
+    it('claude-code는 skills, rules, agents 지원', () => {
       expect(resolver.getSupportedTypes('claude-code')).toEqual([
         'skills',
         'rules',
-        'commands',
         'agents',
       ]);
     });
@@ -27,19 +26,17 @@ describe('PathResolver', () => {
       ]);
     });
 
-    it('cursor는 skills, rules, commands 지원', () => {
+    it('cursor는 skills, rules 지원', () => {
       expect(resolver.getSupportedTypes('cursor')).toEqual([
         'skills',
         'rules',
-        'commands',
       ]);
     });
 
-    it('antigravity는 skills, rules, commands 지원', () => {
+    it('antigravity는 skills, rules 지원', () => {
       expect(resolver.getSupportedTypes('antigravity')).toEqual([
         'skills',
         'rules',
-        'commands',
       ]);
     });
   });
@@ -63,35 +60,27 @@ describe('PathResolver', () => {
       ).toBe('.github/instructions/');
     });
 
-    it('github-copilot commands는 null', () => {
-      expect(
-        resolver.resolveAgentPath('github-copilot', 'commands', 'project')
-      ).toBeNull();
-    });
-
     it('cursor agents는 null', () => {
       expect(resolver.resolveAgentPath('cursor', 'agents', 'project')).toBeNull();
     });
 
-    it('antigravity commands는 workflows 경로', () => {
+    it('antigravity agents는 null', () => {
       expect(
-        resolver.resolveAgentPath('antigravity', 'commands', 'project')
-      ).toBe('.agent/workflows/');
+        resolver.resolveAgentPath('antigravity', 'agents', 'project')
+      ).toBeNull();
     });
   });
 
   describe('isTypeSupported', () => {
-    it('claude-code는 모든 타입 지원', () => {
+    it('claude-code는 skills, rules, agents 지원', () => {
       expect(resolver.isTypeSupported('claude-code', 'skills')).toBe(true);
       expect(resolver.isTypeSupported('claude-code', 'rules')).toBe(true);
-      expect(resolver.isTypeSupported('claude-code', 'commands')).toBe(true);
       expect(resolver.isTypeSupported('claude-code', 'agents')).toBe(true);
     });
 
-    it('github-copilot은 commands, agents 미지원', () => {
+    it('github-copilot은 agents 미지원', () => {
       expect(resolver.isTypeSupported('github-copilot', 'skills')).toBe(true);
       expect(resolver.isTypeSupported('github-copilot', 'rules')).toBe(true);
-      expect(resolver.isTypeSupported('github-copilot', 'commands')).toBe(false);
       expect(resolver.isTypeSupported('github-copilot', 'agents')).toBe(false);
     });
 
@@ -122,7 +111,6 @@ describe('PathResolver', () => {
       expect(config.supportedTypes).toEqual([
         'skills',
         'rules',
-        'commands',
         'agents',
       ]);
     });

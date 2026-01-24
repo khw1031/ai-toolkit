@@ -1,17 +1,81 @@
-import type { ResourceType, AgentKey, RegistryDirectory, AgentConfig, AgentPaths } from '@hanssem/ai-registry';
+// ============================================
+// Core Types (formerly from @hanssem/ai-registry)
+// ============================================
 
-// Re-export registry types
-export type { ResourceType, AgentKey, RegistryDirectory, AgentConfig, AgentPaths };
+/**
+ * 리소스 타입 (복수형으로 통일)
+ */
+export type ResourceType = 'skills' | 'rules' | 'agents';
+
+/**
+ * 지원하는 Agent 키
+ */
+export type AgentKey = 'claude-code' | 'cursor' | 'github-copilot' | 'antigravity';
+
+/**
+ * Agent 경로 정의
+ */
+export interface AgentPaths {
+  skills: string;
+  rules: string;
+  agents: string | null;    // null = 미지원
+}
+
+/**
+ * Agent 설정
+ */
+export interface AgentConfig {
+  name: string;
+  supportedTypes: ResourceType[];
+  paths: {
+    project: AgentPaths;
+    global: AgentPaths;
+  };
+}
+
+/**
+ * Agent Registry 타입
+ */
+export type AgentRegistry = Record<AgentKey, AgentConfig>;
+
+// ============================================
+// Source Parser Types
+// ============================================
+
+/**
+ * 파싱된 소스 정보
+ * 다양한 소스 포맷(GitHub, GitLab, Git URL 등)을 통일된 구조로 표현
+ */
+export interface ParsedSource {
+  /** 소스 유형 */
+  type: 'github' | 'gitlab' | 'git' | 'direct-url';
+  /** 정규화된 URL */
+  url?: string;
+  /** 레포지토리 내 서브 경로 (예: skills/frontend-design) */
+  subpath?: string;
+  /** Git 브랜치/태그/커밋 참조 */
+  ref?: string;
+  /** GitHub/GitLab owner (조직 또는 사용자) */
+  owner?: string;
+  /** 레포지토리 이름 */
+  repo?: string;
+  /** 원본 입력 문자열 */
+  raw: string;
+}
+
+// ============================================
+// CLI Types
+// ============================================
 
 /**
  * 인터랙티브 모드 결과
  */
 export interface InteractiveResult {
   agent: AgentKey;
-  directory: RegistryDirectory;
   types: ResourceType[];
   resources: Resource[];
   scope: 'project' | 'global';
+  source?: ParsedSource;
 }
 
 /**
@@ -125,7 +189,6 @@ export interface ZipResult {
  * ZIP 프롬프트 결과 (Agent/Scope 없음)
  */
 export interface ZipPromptResult {
-  directories: RegistryDirectory[];
   types: ResourceType[];
   resources: Resource[];
 }

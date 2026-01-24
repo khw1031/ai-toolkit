@@ -76,10 +76,9 @@ export class ResourceParser {
     const filename = basename(filePath);
 
     const typeMap: Record<string, ResourceType> = {
-      'SKILL.md': 'skill',
-      'RULES.md': 'rule',
-      'COMMANDS.md': 'command',
-      'AGENT.md': 'agent',
+      'SKILL.md': 'skills',
+      'RULES.md': 'rules',
+      'AGENT.md': 'agents',
     };
 
     return typeMap[filename] || null;

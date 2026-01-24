@@ -24,11 +24,11 @@ This is a commit skill.`,
         isDirectory: false,
       };
 
-      const resource = parser.parseResource(file, 'skill');
+      const resource = parser.parseResource(file, 'skills');
 
       expect(resource.name).toBe('commit');
       expect(resource.description).toBe('Create git commits');
-      expect(resource.type).toBe('skill');
+      expect(resource.type).toBe('skills');
       expect(resource.metadata.author).toBe('AI Toolkit');
       expect(resource.metadata.version).toBe('1.0.0');
       expect(resource.metadata.license).toBe('MIT');
@@ -42,7 +42,7 @@ This is a commit skill.`,
         isDirectory: false,
       };
 
-      const resource = parser.parseResource(file, 'skill');
+      const resource = parser.parseResource(file, 'skills');
       expect(resource.name).toBe('my-skill');
     });
 
@@ -53,8 +53,8 @@ This is a commit skill.`,
         isDirectory: false,
       };
 
-      const resource = parser.parseResource(file, 'skill');
-      expect(resource.type).toBe('rule'); // Detected from filename
+      const resource = parser.parseResource(file, 'skills');
+      expect(resource.type).toBe('rules'); // Detected from filename
     });
 
     it('should handle missing frontmatter', () => {
@@ -64,7 +64,7 @@ This is a commit skill.`,
         isDirectory: false,
       };
 
-      const resource = parser.parseResource(file, 'skill');
+      const resource = parser.parseResource(file, 'skills');
       expect(resource.name).toBe('test');
       expect(resource.description).toBe('');
     });
@@ -79,7 +79,7 @@ Content`,
         isDirectory: false,
       };
 
-      const resource = parser.parseResource(file, 'skill');
+      const resource = parser.parseResource(file, 'skills');
       expect(resource.name).toBe('bad');
     });
   });
@@ -99,7 +99,7 @@ Content`,
         },
       ];
 
-      const resources = parser.parseResources(files, 'skill');
+      const resources = parser.parseResources(files, 'skills');
       expect(resources.length).toBe(2);
       expect(resources[0].name).toBe('skill1');
       expect(resources[1].name).toBe('skill2');
@@ -116,7 +116,7 @@ Content`,
 
     it('should skip type directories', () => {
       const name = (parser as any).extractNameFromPath('skills/SKILL.md');
-      expect(name).toBe('skill'); // Fallback to filename
+      expect(name).toBe('skill'); // Fallback to filename (lowercase, no .md)
     });
 
     it('should handle nested paths', () => {
