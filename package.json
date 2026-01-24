@@ -1,0 +1,21 @@
+{
+  "name": "ai-toolkit",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Universal AI agent resource installer",
+  "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "dev": "turbo run dev"
+  },
+  "devDependencies": {
+    "turbo": "^2.7.5",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=24.0.0",
+    "pnpm": ">=10.0.0"
+  },
+  "packageManager": "pnpm@10.28.1"
+}

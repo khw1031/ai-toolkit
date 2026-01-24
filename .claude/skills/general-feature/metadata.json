@@ -1,0 +1,8 @@
+{
+  "name": "general-feature",
+  "version": "1.0.0",
+  "description": "일반적인 기능 구현을 위한 단계별 워크플로우. Requirements → Design → Task Analysis → Implementation → Review 5단계로 체계적 진행.",
+  "steps": 5,
+  "created_at": "2026-01-23T12:26:13Z",
+  "updated_at": "2026-01-23T23:00:00Z"
+}

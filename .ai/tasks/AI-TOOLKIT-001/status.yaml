@@ -1,0 +1,17 @@
+task_id: AI-TOOLKIT-001
+workflow: general-feature
+status: running
+current_step: step-5
+created_at: 2026-01-23T12:34:30Z
+updated_at: 2026-01-24T11:30:00Z
+steps:
+  step-1:
+    status: completed
+  step-2:
+    status: completed
+  step-3:
+    status: completed
+  step-4:
+    status: completed
+  step-5:
+    status: completed
