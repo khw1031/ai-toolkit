@@ -276,19 +276,48 @@ mkdir -p .ai/tasks/<TASK_ID>/todos
 - `.ai/tasks/<TASK_ID>/todos/02-TASK.md`
 - ...
 
-## 완료 후: 커밋 및 안내
+## 완료 처리
 
-### Git 커밋
+### 1. 사용자 확인 (필수)
+
+체크리스트를 모두 만족했다면 사용자에게 확인합니다:
+
+```
+📋 Step 3 체크리스트 완료 확인:
+- [x] 10-output-plan.md, 20-output-system-design.md 완전히 이해함
+- [x] 모든 Phase 작업이 서브태스크로 분해됨
+- [x] 의존성 그래프에 순환 의존성 없음
+- [x] 병렬 실행 가능한 태스크 식별됨
+- [x] TASK_MASTER.md 및 개별 TASK.md 작성 완료
+
+👉 Step 3을 완료 처리할까요?
+```
+
+> ⚠️ **사용자 승인 없이 다음 단계로 진행하지 마세요.**
+
+### 2. 승인 후 처리
+
+사용자가 승인하면 다음을 수행합니다:
+
+#### Git 커밋
 
 ```bash
-# 커밋 메시지 제안 및 사용자 확인
 git add .ai/tasks/<TASK_ID>/30-output-task.md .ai/tasks/<TASK_ID>/todos/
 git commit -m "feat/<TASK_ID>-[AI]: Completed Step 3 task analysis"
 ```
 
-**커밋 메시지 형식**: `feat/<TASK_ID>-[AI]: Completed Step 3 task analysis`
+#### status.yaml 업데이트
 
-### 다음 Step 안내
+```yaml
+current_step: step-4
+steps:
+  step-3:
+    status: completed
+  step-4:
+    status: pending
+```
+
+### 3. 다음 Step 안내
 
 ```
 ✅ Step 3 완료!
