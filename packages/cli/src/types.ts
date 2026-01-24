@@ -110,3 +110,22 @@ export interface InstallResult {
   renamedTo?: string;
   error?: string;
 }
+
+/**
+ * ZIP 내보내기 결과
+ */
+export interface ZipResult {
+  success: boolean;
+  outputPath: string;
+  resourceCount: number;
+  error?: string;
+}
+
+/**
+ * ZIP 프롬프트 결과 (Agent/Scope 없음)
+ */
+export interface ZipPromptResult {
+  directories: RegistryDirectory[];
+  types: ResourceType[];
+  resources: Resource[];
+}
