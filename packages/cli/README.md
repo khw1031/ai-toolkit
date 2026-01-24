@@ -84,13 +84,13 @@ CLI는 단계별 인터랙티브 플로우를 제공합니다:
 | Scope | Skills | Rules |
 |-------|--------|-------|
 | Project | `.github/skills/` | `.github/instructions/` |
-| Global | `~/.github/skills/` | `~/.github/instructions/` |
+| Global | `~/.copilot/skills/` | `~/.copilot/instructions/` |
 
 ### Antigravity
 | Scope | Skills | Rules | Commands |
 |-------|--------|-------|----------|
 | Project | `.agent/skills/` | `.agent/rules/` | `.agent/workflows/` |
-| Global | `~/.agent/skills/` | `~/.agent/rules/` | `~/.agent/workflows/` |
+| Global | `~/.gemini/antigravity/skills/` | `~/.gemini/antigravity/rules/` | `~/.gemini/antigravity/workflows/` |
 
 ## 중복 파일 처리
 

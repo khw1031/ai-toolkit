@@ -2,11 +2,9 @@
 
 > Universal AI agent resource installer for Skills, Rules, Commands, and Agents
 
-AI 코딩 에이전트(Claude Code, Cursor, Antigravity 등)에 Skills, Rules, Commands, Agents를 일괄 배포하는 CLI 도구입니다.
+AI 코딩 에이전트(Claude Code, Cursor, GitHub Copilot, Antigravity)에 Skills, Rules, Commands, Agents를 일괄 배포하는 CLI 도구입니다.
 
 ## 설치 및 사용
-
-### Interactive 모드
 
 ```bash
 npx @ai-toolkit/cli
@@ -14,43 +12,48 @@ npx @ai-toolkit/cli
 
 대화형 UI로 리소스 타입, 소스, 에이전트를 선택합니다.
 
-### Non-interactive 모드
-
-```bash
-# GitHub에서 스킬 설치
-npx @ai-toolkit/cli --skills --source=owner/repo --agents=claude-code,cursor
-
-# 로컬 경로에서 룰 설치
-npx @ai-toolkit/cli --rules --source=./my-rules --agents=claude-code --scope=global
-
-# 자동 덮어쓰기 모드
-npx @ai-toolkit/cli --skills --source=owner/repo --agents=cursor --yes
-```
-
-## CLI 옵션
-
-| 옵션 | 설명 | 예시 |
-|------|------|------|
-| `--skills` | Skills 리소스 설치 | `--skills` |
-| `--rules` | Rules 리소스 설치 | `--rules` |
-| `--commands` | Commands 리소스 설치 | `--commands` |
-| `--agents-resource` | Agents 설정 설치 | `--agents-resource` |
-| `--source <source>` | 소스 경로 (GitHub owner/repo, 로컬 경로, URL) | `--source=anthropics/skills` |
-| `--agents <agents>` | 대상 에이전트 (쉼표 구분) | `--agents=claude-code,cursor` |
-| `--scope <scope>` | 설치 범위 (project/global) | `--scope=global` |
-| `--on-duplicate <action>` | 중복 처리 전략 | `--on-duplicate=backup` |
-| `--yes` | 자동 덮어쓰기 (비인터랙티브) | `--yes` |
-
 ## 지원 에이전트
 
-| 에이전트 | key | project 경로 | global 경로 |
-|---------|-----|-------------|-------------|
-| Claude Code | `claude-code` | `.claude/skills/` | `~/.claude/skills/` |
-| Cursor | `cursor` | `.cursor/skills/` | `~/.cursor/skills/` |
-| Antigravity | `antigravity` | `.agent/skills/` | `~/.gemini/antigravity/skills/` |
-| Gemini CLI | `gemini-cli` | `.gemini/skills/` | `~/.gemini/skills/` |
-| GitHub Copilot | `github-copilot` | `.github/skills/` | `~/.copilot/skills/` |
-| OpenCode | `opencode` | `.opencode/skills/` | `~/.config/opencode/skills/` |
+| 에이전트 | key | 지원 리소스 |
+|---------|-----|------------|
+| Claude Code | `claude-code` | skills, rules, commands, agents |
+| Cursor | `cursor` | skills, rules, commands |
+| GitHub Copilot | `github-copilot` | skills, rules |
+| Antigravity | `antigravity` | skills, rules, commands |
+
+### 설치 경로
+
+#### Skills
+
+| 에이전트 | project | global |
+|---------|---------|--------|
+| Claude Code | `.claude/skills/` | `~/.claude/skills/` |
+| Cursor | `.cursor/skills/` | `~/.cursor/skills/` |
+| GitHub Copilot | `.github/skills/` | `~/.copilot/skills/` |
+| Antigravity | `.agent/skills/` | `~/.gemini/antigravity/skills/` |
+
+#### Rules
+
+| 에이전트 | project | global |
+|---------|---------|--------|
+| Claude Code | `.claude/rules/` | `~/.claude/rules/` |
+| Cursor | `.cursor/rules/` | `~/.cursor/rules/` |
+| GitHub Copilot | `.github/instructions/` | `~/.copilot/instructions/` |
+| Antigravity | `.agent/rules/` | `~/.gemini/antigravity/rules/` |
+
+#### Commands
+
+| 에이전트 | project | global |
+|---------|---------|--------|
+| Claude Code | `.claude/commands/` | `~/.claude/commands/` |
+| Cursor | `.cursor/commands/` | `~/.cursor/commands/` |
+| Antigravity | `.agent/workflows/` | `~/.gemini/antigravity/workflows/` |
+
+#### Agents
+
+| 에이전트 | project | global |
+|---------|---------|--------|
+| Claude Code | `.claude/agents/` | `~/.claude/agents/` |
 
 ## 중복 처리 전략
 
@@ -67,10 +70,10 @@ npx @ai-toolkit/cli --skills --source=owner/repo --agents=cursor --yes
 
 | 타입 | 파일명 | 설명 |
 |------|--------|------|
-| skill | `SKILL.md` | 재사용 가능한 작업 스킬 |
-| rule | `RULES.md` | 코딩 규칙 및 가이드라인 |
-| command | `COMMANDS.md` | 슬래시 명령어 정의 |
-| agent | `AGENT.md` | 에이전트 설정 파일 |
+| skills | `SKILL.md` | 재사용 가능한 작업 스킬 |
+| rules | `RULES.md` | 코딩 규칙 및 가이드라인 |
+| commands | `COMMANDS.md` | 슬래시 명령어 정의 |
+| agents | `AGENT.md` | 에이전트 설정 파일 |
 
 ## 스킬 구조
 
@@ -84,24 +87,18 @@ skill-name/
     └── rules/         # 공유 규칙
 ```
 
-## 예제
+## 사용 예시
 
-### GitHub에서 커뮤니티 스킬 설치
+Interactive 모드에서 다음 항목을 순서대로 선택합니다:
 
-```bash
-npx @ai-toolkit/cli --skills --source=community/ai-skills --agents=claude-code
-```
-
-### 팀 전체에 룰 배포
-
-```bash
-npx @ai-toolkit/cli --rules --source=./team-rules --agents=claude-code,cursor,github-copilot --yes
-```
-
-### 글로벌 설정 설치
+1. **리소스 타입** - skills, rules, commands, agents 중 선택
+2. **소스** - GitHub 저장소(owner/repo), 로컬 경로, URL
+3. **대상 에이전트** - 설치할 에이전트 선택
+4. **설치 범위** - project(현재 프로젝트) 또는 global(전역)
+5. **중복 처리** - 기존 파일과 충돌 시 처리 방법
 
 ```bash
-npx @ai-toolkit/cli --skills --source=owner/repo --agents=claude-code --scope=global
+npx @ai-toolkit/cli
 ```
 
 ## 개발
