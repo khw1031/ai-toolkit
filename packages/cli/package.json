@@ -1,6 +1,6 @@
 {
   "name": "add-ai-tools",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Universal AI agent resource installer CLI",
   "type": "module",
   "bin": {

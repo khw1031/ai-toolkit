@@ -12,6 +12,44 @@ interface GitHubContent {
 }
 
 /**
+ * GitHub API 에러
+ */
+export class GitHubApiError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+    public readonly path: string
+  ) {
+    super(message);
+    this.name = 'GitHubApiError';
+  }
+}
+
+/**
+ * GitHub 리소스를 찾을 수 없음
+ */
+export class GitHubNotFoundError extends GitHubApiError {
+  constructor(path: string) {
+    super(`Resource not found: ${path}`, 404, path);
+    this.name = 'GitHubNotFoundError';
+  }
+}
+
+/**
+ * GitHub API 레이트 제한
+ */
+export class GitHubRateLimitError extends GitHubApiError {
+  constructor(path: string) {
+    super(
+      'GitHub API rate limit exceeded. Try again later or use authenticated requests.',
+      403,
+      path
+    );
+    this.name = 'GitHubRateLimitError';
+  }
+}
+
+/**
  * GitHubFetcher - GitHub 레포지토리에서 리소스를 가져옵니다
  */
 export class GitHubFetcher {
@@ -69,15 +107,15 @@ export class GitHubFetcher {
       for (const item of contents) {
         if (item.type === 'dir') {
           // 하위 디렉토리인 경우 (예: rules/progressive-disclosure/)
-          const subResources = await this.fetchResourceFromSubdir(
+          const resource = await this.fetchResourceFromSubdir(
             owner,
             repo,
             item.path,
             type,
             ref
           );
-          if (subResources) {
-            resources.push(subResources);
+          if (resource) {
+            resources.push(resource);
           }
         } else if (item.type === 'file' && item.name.endsWith('.md')) {
           // 직접 .md 파일인 경우
@@ -97,7 +135,7 @@ export class GitHubFetcher {
       return resources;
     } catch (error) {
       // 디렉토리가 없는 경우 빈 배열 반환
-      if (error instanceof Error && error.message.includes('404')) {
+      if (error instanceof GitHubNotFoundError) {
         return [];
       }
       throw error;
@@ -128,7 +166,7 @@ export class GitHubFetcher {
       const content = await this.fetchFileContent(owner, repo, mainFile.path, ref);
 
       // 디렉토리 내 모든 파일 가져오기 (메인 파일 제외)
-      const allFiles = await this.fetchAllFilesInDir(
+      const siblingFiles = await this.fetchAllFilesInDir(
         owner,
         repo,
         dirPath,
@@ -141,12 +179,17 @@ export class GitHubFetcher {
         path: mainFile.path,
         content,
         isDirectory: false,
-        siblingFiles: allFiles,
+        siblingFiles,
       };
 
       return this.parser.parseResource(sourceFile, type);
     } catch (error) {
-      console.warn(`Failed to fetch resource from ${dirPath}:`, error);
+      // 404는 무시하고 null 반환
+      if (error instanceof GitHubNotFoundError) {
+        return null;
+      }
+      // 다른 에러는 경고 출력 후 null 반환
+      console.warn(`Failed to fetch resource from ${dirPath}:`, error instanceof Error ? error.message : error);
       return null;
     }
   }
@@ -171,15 +214,19 @@ export class GitHubFetcher {
       }
 
       if (item.type === 'file') {
-        const content = await this.fetchFileContent(owner, repo, item.path, ref);
-        files.push({
-          path: item.name, // 파일명만 (상대 경로)
-          content,
-          isDirectory: false,
-        });
+        try {
+          const content = await this.fetchFileContent(owner, repo, item.path, ref);
+          files.push({
+            path: item.name, // 파일명만 (상대 경로)
+            content,
+            isDirectory: false,
+          });
+        } catch (error) {
+          console.warn(`Failed to fetch file ${item.path}:`, error instanceof Error ? error.message : error);
+        }
       } else if (item.type === 'dir') {
         // 하위 디렉토리의 모든 파일을 재귀적으로 가져옴
-        const dirFiles = await this.fetchDirectoryFiles(
+        const dirFiles = await this.fetchDirectoryFilesRecursive(
           owner,
           repo,
           item.path,
@@ -214,70 +261,47 @@ export class GitHubFetcher {
 
       return this.parser.parseResource(sourceFile, type);
     } catch (error) {
-      console.warn(`Failed to fetch resource ${filePath}:`, error);
+      if (error instanceof GitHubNotFoundError) {
+        return null;
+      }
+      console.warn(`Failed to fetch resource ${filePath}:`, error instanceof Error ? error.message : error);
       return null;
     }
   }
 
   /**
-   * 관련 파일들을 가져옵니다 (scripts/, references/, assets/)
-   * basePath 기준 상대 경로로 저장
+   * 디렉토리 내 모든 파일을 재귀적으로 가져옵니다 (상대 경로 반환)
    */
-  private async fetchSiblingFiles(
-    owner: string,
-    repo: string,
-    basePath: string,
-    contents: GitHubContent[],
-    ref: string
-  ): Promise<SourceFile[]> {
-    const siblingDirs = ['scripts', 'references', 'assets'];
-    const siblingFiles: SourceFile[] = [];
-
-    for (const item of contents) {
-      if (item.type === 'dir' && siblingDirs.includes(item.name)) {
-        const dirFiles = await this.fetchDirectoryFiles(
-          owner,
-          repo,
-          item.path,
-          ref,
-          basePath // basePath 전달
-        );
-        siblingFiles.push(...dirFiles);
-      }
-    }
-
-    return siblingFiles;
-  }
-
-  /**
-   * 디렉토리 내 모든 파일을 재귀적으로 가져옵니다
-   * basePath가 제공되면 상대 경로로 변환
-   */
-  private async fetchDirectoryFiles(
+  private async fetchDirectoryFilesRecursive(
     owner: string,
     repo: string,
     dirPath: string,
     ref: string,
-    basePath?: string
+    basePath: string
   ): Promise<SourceFile[]> {
     try {
       const contents = await this.listDirectory(owner, repo, dirPath, ref);
       const files: SourceFile[] = [];
 
       for (const item of contents) {
+        // basePath 기준 상대 경로 계산
+        const relativePath = item.path.startsWith(`${basePath}/`)
+          ? item.path.slice(basePath.length + 1)
+          : item.path;
+
         if (item.type === 'file') {
-          const content = await this.fetchFileContent(owner, repo, item.path, ref);
-          // basePath가 있으면 상대 경로로 변환
-          const relativePath = basePath
-            ? item.path.replace(`${basePath}/`, '')
-            : item.path;
-          files.push({
-            path: relativePath,
-            content,
-            isDirectory: false,
-          });
+          try {
+            const content = await this.fetchFileContent(owner, repo, item.path, ref);
+            files.push({
+              path: relativePath,
+              content,
+              isDirectory: false,
+            });
+          } catch (error) {
+            console.warn(`Failed to fetch file ${item.path}:`, error instanceof Error ? error.message : error);
+          }
         } else if (item.type === 'dir') {
-          const subFiles = await this.fetchDirectoryFiles(
+          const subFiles = await this.fetchDirectoryFilesRecursive(
             owner,
             repo,
             item.path,
@@ -290,7 +314,10 @@ export class GitHubFetcher {
 
       return files;
     } catch (error) {
-      console.warn(`Failed to fetch directory ${dirPath}:`, error);
+      if (error instanceof GitHubNotFoundError) {
+        return [];
+      }
+      console.warn(`Failed to fetch directory ${dirPath}:`, error instanceof Error ? error.message : error);
       return [];
     }
   }
@@ -314,7 +341,7 @@ export class GitHubFetcher {
     });
 
     if (!response.ok) {
-      throw new Error(`GitHub API error: ${response.status} for ${path}`);
+      this.handleHttpError(response.status, path);
     }
 
     const data = await response.json();
@@ -335,10 +362,30 @@ export class GitHubFetcher {
     const response = await fetch(url);
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch file: ${response.status} for ${path}`);
+      this.handleHttpError(response.status, path);
     }
 
     return response.text();
+  }
+
+  /**
+   * HTTP 에러를 처리합니다
+   */
+  private handleHttpError(status: number, path: string): never {
+    switch (status) {
+      case 404:
+        throw new GitHubNotFoundError(path);
+      case 403:
+        throw new GitHubRateLimitError(path);
+      case 401:
+        throw new GitHubApiError('Authentication required', status, path);
+      case 500:
+      case 502:
+      case 503:
+        throw new GitHubApiError('GitHub server error. Please try again later.', status, path);
+      default:
+        throw new GitHubApiError(`GitHub API error: ${status}`, status, path);
+    }
   }
 
   /**
@@ -358,7 +405,7 @@ export class GitHubFetcher {
     contents: GitHubContent[],
     type: ResourceType
   ): GitHubContent | null {
-    // 타입별 메인 파일명
+    // 타입별 메인 파일명 (우선순위 순)
     const mainFileNames: Record<ResourceType, string[]> = {
       skills: ['SKILL.md', 'skill.md'],
       rules: ['RULE.md', 'RULES.md', 'rule.md', 'rules.md', 'README.md'],

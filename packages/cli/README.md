@@ -1,161 +1,122 @@
 # add-ai-tools
 
-AI Agent 리소스(Skills, Rules, Commands, Agents)를 쉽게 설치하는 CLI 도구입니다.
+Install AI agent resources (Skills, Rules, Agents) from various sources with a single command.
 
-## 설치
-
-```bash
-npm install -g @hanssem/ai-toolkit
-```
-
-## 사용법
+## Installation
 
 ```bash
-npx @hanssem/ai-toolkit
+npm install -g add-ai-tools
 ```
 
-### ZIP 내보내기
+## Quick Start
+
+### Install from GitHub
 
 ```bash
-npx @hanssem/ai-toolkit --zip
+# Using GitHub shorthand
+npx add-ai-tools owner/repo
+
+# Using GitHub URL
+npx add-ai-tools https://github.com/owner/repo
+
+# Install specific resource
+npx add-ai-tools https://github.com/owner/repo/tree/main/skills/my-skill
 ```
 
-## Interactive 플로우
-
-CLI는 단계별 인터랙티브 플로우를 제공합니다:
-
-### 1. Agent 선택
-
-대상 AI agent를 선택합니다:
-- Claude Code
-- Cursor
-- GitHub Copilot
-- Antigravity
-
-### 2. Directory 선택
-
-리소스 디렉토리를 선택합니다:
-- **Common**: 범용 리소스 (모든 프로젝트에서 사용 가능)
-- **Frontend**: 프론트엔드 개발 관련 (React, Vue, etc.)
-- **App**: 앱 개발 관련 (Mobile, Desktop)
-
-### 3. Type 선택
-
-리소스 타입을 선택합니다 (Agent별 지원 타입만 표시):
-- **Skills**: 재사용 가능한 프롬프트/지침
-- **Rules**: 프로젝트 가이드라인 및 표준
-- **Commands**: 커스텀 슬래시 명령어
-- **Agents**: Agent 설정 (Claude Code 전용)
-
-### 4. Resources 선택
-
-설치할 리소스를 선택합니다.
-
-### 5. Scope 선택
-
-설치 범위를 선택합니다:
-- **Project**: 현재 프로젝트에 설치 (권장)
-- **Global**: 홈 디렉토리에 설치
-
-### 6. 확인 및 설치
-
-설치 요약을 확인하고 진행합니다.
-
-## Agent별 지원 타입
-
-| Agent | Skills | Rules | Commands | Agents |
-|-------|:------:|:-----:|:--------:|:------:|
-| Claude Code | O | O | O | O |
-| Cursor | O | O | O | - |
-| GitHub Copilot | O | O | - | - |
-| Antigravity | O | O | O | - |
-
-## 설치 경로
-
-각 Agent별로 적절한 경로에 리소스가 설치됩니다:
-
-### Claude Code
-| Scope | Skills | Rules | Commands | Agents |
-|-------|--------|-------|----------|--------|
-| Project | `.claude/skills/` | `.claude/rules/` | `.claude/commands/` | `.claude/agents/` |
-| Global | `~/.claude/skills/` | `~/.claude/rules/` | `~/.claude/commands/` | `~/.claude/agents/` |
-
-### Cursor
-| Scope | Skills | Rules | Commands |
-|-------|--------|-------|----------|
-| Project | `.cursor/skills/` | `.cursor/rules/` | `.cursor/commands/` |
-| Global | `~/.cursor/skills/` | `~/.cursor/rules/` | `~/.cursor/commands/` |
-
-### GitHub Copilot
-| Scope | Skills | Rules |
-|-------|--------|-------|
-| Project | `.github/skills/` | `.github/instructions/` |
-| Global | `~/.copilot/skills/` | `~/.copilot/instructions/` |
-
-### Antigravity
-| Scope | Skills | Rules | Commands |
-|-------|--------|-------|----------|
-| Project | `.agent/skills/` | `.agent/rules/` | `.agent/workflows/` |
-| Global | `~/.gemini/antigravity/skills/` | `~/.gemini/antigravity/rules/` | `~/.gemini/antigravity/workflows/` |
-
-## 중복 파일 처리
-
-이미 존재하는 리소스를 설치하려고 할 때, 다음 옵션 중 선택할 수 있습니다:
-
-- **Skip**: 기존 파일 유지
-- **Overwrite**: 새 버전으로 교체
-- **Rename**: 새 이름으로 저장 (e.g., `skill-2`)
-- **Backup**: 기존 파일 백업 후 새 버전 설치
-- **Compare**: 차이점 비교 후 결정
-
-## 개발
-
-### 빌드
+### Interactive Mode
 
 ```bash
-pnpm build
+npx add-ai-tools
 ```
 
-### 테스트
+Follow the prompts to select agent, resource type, and resources to install.
+
+### Export as ZIP
 
 ```bash
-pnpm test
+# Export from GitHub source (with prompts)
+npx add-ai-tools owner/repo --zip
+
+# Interactive source input
+npx add-ai-tools --zip
+
+# Export all resources without prompts
+npx add-ai-tools owner/repo --zip -y
 ```
 
-### 로컬 실행
+## Supported Sources
+
+| Format | Example |
+|--------|---------|
+| GitHub shorthand | `owner/repo` |
+| GitHub URL | `https://github.com/owner/repo` |
+| GitHub URL with path | `https://github.com/owner/repo/tree/main/skills/my-skill` |
+| GitLab URL | `https://gitlab.com/owner/repo` |
+| Git SSH | `git@github.com:owner/repo.git` |
+
+## Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--agent <agent>` | Target agent (`claude-code`, `cursor`, `github-copilot`, `antigravity`) | `claude-code` |
+| `--scope <scope>` | Installation scope (`project`, `global`) | `project` |
+| `-y, --yes` | Skip confirmation prompts | `false` |
+| `--zip` | Export resources as ZIP | `false` |
+
+## Supported Agents
+
+| Agent | Skills | Rules | Agents |
+|-------|:------:|:-----:|:------:|
+| Claude Code | ✓ | ✓ | ✓ |
+| Cursor | ✓ | ✓ | - |
+| GitHub Copilot | ✓ | ✓ | - |
+| Antigravity | ✓ | ✓ | - |
+
+## Installation Paths
+
+Resources are installed to the appropriate location for each agent:
+
+| Agent | Project Scope | Global Scope |
+|-------|---------------|--------------|
+| Claude Code | `.claude/` | `~/.claude/` |
+| Cursor | `.cursor/` | `~/.cursor/` |
+| GitHub Copilot | `.github/` | `~/.copilot/` |
+| Antigravity | `.agent/` | `~/.gemini/antigravity/` |
+
+## Duplicate Handling
+
+When a resource already exists, you can choose to:
+
+- **Skip** - Keep existing file
+- **Overwrite** - Replace with new version
+- **Rename** - Save as new name (e.g., `skill-2`)
+- **Backup** - Backup existing file before replacing
+- **Compare** - View diff and decide
+
+Identical content is automatically skipped.
+
+## Examples
 
 ```bash
-pnpm dev
+# Install all resources from a repo to Claude Code
+npx add-ai-tools vercel-labs/ai-chatbot
+
+# Install to Cursor with global scope
+npx add-ai-tools owner/repo --agent cursor --scope global
+
+# Install without prompts
+npx add-ai-tools owner/repo -y
+
+# Interactive mode
+npx add-ai-tools
+
+# Export resources as ZIP from GitHub
+npx add-ai-tools owner/repo --zip
+
+# Export all resources without prompts
+npx add-ai-tools owner/repo --zip -y
 ```
 
-## 프로젝트 구조
-
-```
-packages/cli/
-├── src/
-│   ├── commands/         # CLI 명령 핸들러
-│   │   └── CommandHandler.ts
-│   ├── path/             # Agent별 경로 해석
-│   │   └── PathResolver.ts
-│   ├── source/           # 레지스트리 리소스 탐색
-│   │   └── RegistryResolver.ts
-│   ├── prompts/          # 인터랙티브 프롬프트
-│   │   └── InteractivePrompt.ts
-│   ├── install/          # 설치 관리
-│   │   ├── InstallManager.ts
-│   │   ├── DuplicateHandler.ts
-│   │   └── BatchHandler.ts
-│   ├── parser/           # 리소스 파싱
-│   │   └── ResourceParser.ts
-│   ├── utils/            # 유틸리티
-│   │   ├── Logger.ts
-│   │   └── diff.ts
-│   └── types.ts          # 타입 정의
-├── bin/
-│   └── cli.js            # CLI 엔트리포인트
-└── README.md
-```
-
-## 라이선스
+## License
 
 MIT

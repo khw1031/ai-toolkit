@@ -42,7 +42,7 @@ export { agents } from "./data/agents.js";
 
 // CLI 설정
 program
-  .name('@hanssem/ai-toolkit')
+  .name('add-ai-tools')
   .description('AI Toolkit - Install and manage AI resources from various sources')
   .argument('[source]', 'Source to install from (GitHub shorthand or URL)')
   .option('--zip', 'Export resources as ZIP file')
@@ -60,11 +60,15 @@ const options = program.opts<{
 const args = program.args;
 
 export async function main(): Promise<void> {
+  const source = args[0];
+
   if (options.zip) {
-    await zipHandler.run();
+    await zipHandler.run({
+      source,
+      yes: options.yes,
+    });
   } else {
     // source 인자가 있으면 외부 소스 모드, 없으면 인터랙티브 모드
-    const source = args[0];
     await commandHandler.run({
       source,
       agent: options.agent,
