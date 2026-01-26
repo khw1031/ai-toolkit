@@ -1,16 +1,13 @@
 {
   "name": "add-ai-tools",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "description": "Universal AI agent resource installer CLI",
   "type": "module",
   "bin": {
     "add-ai-tools": "./dist/index.mjs"
   },
   "files": [
-    "dist",
-    "README.ko.md",
-    "README.ja.md",
-    "README.zh-CN.md"
+    "dist"
   ],
   "scripts": {
     "build": "tsdown",
