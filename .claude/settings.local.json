@@ -18,7 +18,8 @@
       "Bash(pnpm --filter @ai-toolkit/cli test:*)",
       "WebSearch",
       "Bash(pnpm tsc:*)",
-      "Bash(pnpm test:*)"
+      "Bash(pnpm test:*)",
+      "Bash(pnpm exec tsx:*)"
     ]
   }
 }

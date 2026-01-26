@@ -18,6 +18,15 @@ const GITLAB_URL_REGEX =
   /^https?:\/\/(?:www\.)?gitlab\.com\/([^/]+)\/([^/]+?)(?:\.git)?(?:\/-\/(?:tree|blob)\/([^/]+)(?:\/(.+))?)?$/;
 
 /**
+ * Bitbucket URL 매칭 정규식
+ * 예: https://bitbucket.org/workspace/repo
+ *     https://bitbucket.org/workspace/repo/src/branch/path
+ *     https://username@bitbucket.org/workspace/repo.git
+ */
+const BITBUCKET_URL_REGEX =
+  /^https?:\/\/(?:[^@]+@)?(?:www\.)?bitbucket\.org\/([^/]+)\/([^/]+?)(?:\.git)?(?:\/src\/([^/]+)(?:\/(.+))?)?$/;
+
+/**
  * GitHub shorthand 매칭 정규식
  * 예: owner/repo
  *     vercel-labs/agent-skills
@@ -94,7 +103,22 @@ export function parseSource(input: string): ParsedSource {
     };
   }
 
-  // 5. Git URL (SSH 또는 git://)
+  // 5. Bitbucket URL
+  const bitbucketMatch = trimmed.match(BITBUCKET_URL_REGEX);
+  if (bitbucketMatch) {
+    const [, owner, repo, ref, subpath] = bitbucketMatch;
+    return {
+      type: 'bitbucket',
+      url: `https://bitbucket.org/${owner}/${repo}`,
+      owner,
+      repo,
+      ref: ref || undefined,
+      subpath: subpath || undefined,
+      raw: input,
+    };
+  }
+
+  // 7. Git URL (SSH 또는 git://)
   const gitMatch = trimmed.match(GIT_URL_REGEX);
   if (gitMatch) {
     // SSH format: git@host:owner/repo.git
@@ -102,9 +126,10 @@ export function parseSource(input: string): ParsedSource {
       const [, host, owner, repo] = gitMatch;
       const isGitHub = host === 'github.com';
       const isGitLab = host === 'gitlab.com';
+      const isBitbucket = host === 'bitbucket.org';
 
       return {
-        type: isGitHub ? 'github' : isGitLab ? 'gitlab' : 'git',
+        type: isGitHub ? 'github' : isGitLab ? 'gitlab' : isBitbucket ? 'bitbucket' : 'git',
         url: `https://${host}/${owner}/${repo}`,
         owner,
         repo,
@@ -116,9 +141,10 @@ export function parseSource(input: string): ParsedSource {
       const [, , , , host, owner, repo] = gitMatch;
       const isGitHub = host === 'github.com';
       const isGitLab = host === 'gitlab.com';
+      const isBitbucket = host === 'bitbucket.org';
 
       return {
-        type: isGitHub ? 'github' : isGitLab ? 'gitlab' : 'git',
+        type: isGitHub ? 'github' : isGitLab ? 'gitlab' : isBitbucket ? 'bitbucket' : 'git',
         url: `https://${host}/${owner}/${repo}`,
         owner,
         repo,
@@ -172,7 +198,7 @@ export function getOwnerRepo(parsed: ParsedSource): string | null {
 
   // URL에서 추출 시도
   if (parsed.url) {
-    const match = parsed.url.match(/(?:github|gitlab)\.com\/([^/]+)\/([^/]+)/);
+    const match = parsed.url.match(/(?:github|gitlab|bitbucket)\.(?:com|org)\/([^/]+)\/([^/]+)/);
     if (match) {
       return `${match[1]}/${match[2]}`;
     }
@@ -210,6 +236,10 @@ export function getSourceDisplayName(parsed: ParsedSource): string {
     case 'gitlab':
       return parsed.owner && parsed.repo
         ? `GitLab: ${parsed.owner}/${parsed.repo}${parsed.subpath ? `/${parsed.subpath}` : ''}`
+        : parsed.url || parsed.raw;
+    case 'bitbucket':
+      return parsed.owner && parsed.repo
+        ? `Bitbucket: ${parsed.owner}/${parsed.repo}${parsed.subpath ? `/${parsed.subpath}` : ''}`
         : parsed.url || parsed.raw;
     case 'git':
       return `Git: ${parsed.url || parsed.raw}`;

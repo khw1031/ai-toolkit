@@ -48,7 +48,7 @@ export type AgentRegistry = Record<AgentKey, AgentConfig>;
  */
 export interface ParsedSource {
   /** 소스 유형 */
-  type: 'github' | 'gitlab' | 'git' | 'direct-url';
+  type: 'github' | 'gitlab' | 'bitbucket' | 'git' | 'direct-url';
   /** 정규화된 URL */
   url?: string;
   /** 레포지토리 내 서브 경로 (예: skills/frontend-design) */

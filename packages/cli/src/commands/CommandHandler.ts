@@ -3,6 +3,7 @@ import { InstallManager } from '../install/InstallManager.js';
 import { Logger } from '../utils/Logger.js';
 import { parseSource, getSourceDisplayName } from '../source/SourceParser.js';
 import { githubFetcher } from '../fetch/GitHubFetcher.js';
+import { bitbucketFetcher } from '../fetch/BitbucketFetcher.js';
 import { pathResolver } from '../path/PathResolver.js';
 import type { InstallRequest, InstallResult, AgentKey, ParsedSource, ResourceType } from '../types.js';
 
@@ -84,6 +85,8 @@ export class CommandHandler {
       let resources;
       if (parsed.type === 'github') {
         resources = await githubFetcher.fetchResources(parsed, types);
+      } else if (parsed.type === 'bitbucket') {
+        resources = await bitbucketFetcher.fetchResources(parsed, types);
       } else {
         this.logger.failProgress(`Source type "${parsed.type}" is not yet supported.`);
         return;

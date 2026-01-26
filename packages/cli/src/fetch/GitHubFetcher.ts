@@ -2,13 +2,44 @@ import type { ParsedSource, Resource, ResourceType, SourceFile } from '../types.
 import { ResourceParser } from '../parser/ResourceParser.js';
 
 /**
- * GitHub API 응답 타입
+ * GitHub Tree API 응답의 파일 항목
  */
-interface GitHubContent {
-  name: string;
+interface GitHubTreeItem {
   path: string;
-  type: 'file' | 'dir';
-  download_url: string | null;
+  mode: string;
+  type: 'blob' | 'tree';
+  sha: string;
+  size?: number;
+  url: string;
+}
+
+/**
+ * GitHub Tree API 응답
+ */
+interface GitHubTreeResponse {
+  sha: string;
+  url: string;
+  tree: GitHubTreeItem[];
+  truncated: boolean;
+}
+
+/**
+ * GitHub Branch API 응답
+ */
+interface GitHubBranchResponse {
+  name: string;
+  commit: {
+    sha: string;
+    url: string;
+  };
+}
+
+/**
+ * 캐시된 파일 데이터
+ */
+interface CachedFile {
+  path: string;
+  content: string;
 }
 
 /**
@@ -51,11 +82,18 @@ export class GitHubRateLimitError extends GitHubApiError {
 
 /**
  * GitHubFetcher - GitHub 레포지토리에서 리소스를 가져옵니다
+ *
+ * 최적화: Git Trees API로 구조를 한 번에 가져오고, 파일은 병렬로 fetch합니다.
+ * - API 호출: 2회 (branch SHA + tree)
+ * - 파일 fetch: raw.githubusercontent.com (Rate Limit 영향 없음)
  */
 export class GitHubFetcher {
   private parser: ResourceParser;
   private baseApiUrl = 'https://api.github.com';
   private baseRawUrl = 'https://raw.githubusercontent.com';
+
+  // 병렬 fetch 동시성 제한
+  private concurrencyLimit = 10;
 
   constructor() {
     this.parser = new ResourceParser();
@@ -73,17 +111,33 @@ export class GitHubFetcher {
     }
 
     const resources: Resource[] = [];
-    const ref = source.ref || 'main';
+
+    // ref가 지정되지 않으면 기본 브랜치 사용
+    const ref = source.ref || (await this.getDefaultBranch(source.owner, source.repo));
+
+    // 1. 전체 트리 구조를 한 번에 가져오기
+    const tree = await this.fetchTree(source.owner, source.repo, ref);
 
     for (const type of types) {
       const dirPath = this.getResourceDirPath(type, source.subpath);
-      const typeResources = await this.fetchResourcesFromDir(
+
+      // 2. 트리에서 해당 디렉토리의 파일들 필터링
+      const dirFiles = this.filterTreeByPath(tree, dirPath);
+
+      if (dirFiles.length === 0) {
+        continue;
+      }
+
+      // 3. 파일 내용을 병렬로 가져오기
+      const cachedFiles = await this.fetchFilesParallel(
         source.owner,
         source.repo,
-        dirPath,
-        type,
-        ref
+        ref,
+        dirFiles
       );
+
+      // 4. 캐시된 데이터에서 리소스 파싱
+      const typeResources = this.parseResourcesFromCache(cachedFiles, dirPath, type);
       resources.push(...typeResources);
     }
 
@@ -91,265 +145,144 @@ export class GitHubFetcher {
   }
 
   /**
-   * 디렉토리에서 리소스를 가져옵니다
+   * Git Trees API로 전체 트리 구조를 가져옵니다
    */
-  private async fetchResourcesFromDir(
+  private async fetchTree(
     owner: string,
     repo: string,
-    dirPath: string,
-    type: ResourceType,
     ref: string
-  ): Promise<Resource[]> {
-    try {
-      const contents = await this.listDirectory(owner, repo, dirPath, ref);
-      const resources: Resource[] = [];
+  ): Promise<GitHubTreeItem[]> {
+    // 먼저 ref의 commit SHA를 가져옴
+    const sha = await this.getRefSha(owner, repo, ref);
 
-      for (const item of contents) {
-        if (item.type === 'dir') {
-          // 하위 디렉토리인 경우 (예: rules/progressive-disclosure/)
-          const resource = await this.fetchResourceFromSubdir(
-            owner,
-            repo,
-            item.path,
-            type,
-            ref
-          );
-          if (resource) {
-            resources.push(resource);
-          }
-        } else if (item.type === 'file' && item.name.endsWith('.md')) {
-          // 직접 .md 파일인 경우
-          const resource = await this.fetchSingleResource(
-            owner,
-            repo,
-            item.path,
-            type,
-            ref
-          );
-          if (resource) {
-            resources.push(resource);
-          }
-        }
-      }
+    // recursive=1로 전체 트리를 한 번에 가져옴
+    // Note: SHA를 직접 사용해야 함 (branch 이름은 동작하지 않음)
+    const url = `${this.baseApiUrl}/repos/${owner}/${repo}/git/trees/${sha}?recursive=1`;
 
-      return resources;
-    } catch (error) {
-      // 디렉토리가 없는 경우 빈 배열 반환
-      if (error instanceof GitHubNotFoundError) {
-        return [];
-      }
-      throw error;
-    }
-  }
-
-  /**
-   * 하위 디렉토리에서 리소스를 가져옵니다 (디렉토리 전체 복제)
-   */
-  private async fetchResourceFromSubdir(
-    owner: string,
-    repo: string,
-    dirPath: string,
-    type: ResourceType,
-    ref: string
-  ): Promise<Resource | null> {
-    try {
-      const contents = await this.listDirectory(owner, repo, dirPath, ref);
-
-      // 메인 리소스 파일 찾기 (메타데이터 파싱용)
-      const mainFile = this.findMainResourceFile(contents, type);
-
-      if (!mainFile) {
-        return null;
-      }
-
-      // 메인 파일 내용 가져오기
-      const content = await this.fetchFileContent(owner, repo, mainFile.path, ref);
-
-      // 디렉토리 내 모든 파일 가져오기 (메인 파일 제외)
-      const siblingFiles = await this.fetchAllFilesInDir(
-        owner,
-        repo,
-        dirPath,
-        contents,
-        ref,
-        mainFile.name
-      );
-
-      const sourceFile: SourceFile = {
-        path: mainFile.path,
-        content,
-        isDirectory: false,
-        siblingFiles,
-      };
-
-      return this.parser.parseResource(sourceFile, type);
-    } catch (error) {
-      // 404는 무시하고 null 반환
-      if (error instanceof GitHubNotFoundError) {
-        return null;
-      }
-      // 다른 에러는 경고 출력 후 null 반환
-      console.warn(`Failed to fetch resource from ${dirPath}:`, error instanceof Error ? error.message : error);
-      return null;
-    }
-  }
-
-  /**
-   * 디렉토리 내 모든 파일을 가져옵니다 (메인 파일 제외, 상대 경로)
-   */
-  private async fetchAllFilesInDir(
-    owner: string,
-    repo: string,
-    basePath: string,
-    contents: GitHubContent[],
-    ref: string,
-    excludeFile: string
-  ): Promise<SourceFile[]> {
-    const files: SourceFile[] = [];
-
-    for (const item of contents) {
-      // 메인 파일 제외
-      if (item.type === 'file' && item.name === excludeFile) {
-        continue;
-      }
-
-      if (item.type === 'file') {
-        try {
-          const content = await this.fetchFileContent(owner, repo, item.path, ref);
-          files.push({
-            path: item.name, // 파일명만 (상대 경로)
-            content,
-            isDirectory: false,
-          });
-        } catch (error) {
-          console.warn(`Failed to fetch file ${item.path}:`, error instanceof Error ? error.message : error);
-        }
-      } else if (item.type === 'dir') {
-        // 하위 디렉토리의 모든 파일을 재귀적으로 가져옴
-        const dirFiles = await this.fetchDirectoryFilesRecursive(
-          owner,
-          repo,
-          item.path,
-          ref,
-          basePath
-        );
-        files.push(...dirFiles);
-      }
-    }
-
-    return files;
-  }
-
-  /**
-   * 단일 리소스 파일을 가져옵니다
-   */
-  private async fetchSingleResource(
-    owner: string,
-    repo: string,
-    filePath: string,
-    type: ResourceType,
-    ref: string
-  ): Promise<Resource | null> {
-    try {
-      const content = await this.fetchFileContent(owner, repo, filePath, ref);
-
-      const sourceFile: SourceFile = {
-        path: filePath,
-        content,
-        isDirectory: false,
-      };
-
-      return this.parser.parseResource(sourceFile, type);
-    } catch (error) {
-      if (error instanceof GitHubNotFoundError) {
-        return null;
-      }
-      console.warn(`Failed to fetch resource ${filePath}:`, error instanceof Error ? error.message : error);
-      return null;
-    }
-  }
-
-  /**
-   * 디렉토리 내 모든 파일을 재귀적으로 가져옵니다 (상대 경로 반환)
-   */
-  private async fetchDirectoryFilesRecursive(
-    owner: string,
-    repo: string,
-    dirPath: string,
-    ref: string,
-    basePath: string
-  ): Promise<SourceFile[]> {
-    try {
-      const contents = await this.listDirectory(owner, repo, dirPath, ref);
-      const files: SourceFile[] = [];
-
-      for (const item of contents) {
-        // basePath 기준 상대 경로 계산
-        const relativePath = item.path.startsWith(`${basePath}/`)
-          ? item.path.slice(basePath.length + 1)
-          : item.path;
-
-        if (item.type === 'file') {
-          try {
-            const content = await this.fetchFileContent(owner, repo, item.path, ref);
-            files.push({
-              path: relativePath,
-              content,
-              isDirectory: false,
-            });
-          } catch (error) {
-            console.warn(`Failed to fetch file ${item.path}:`, error instanceof Error ? error.message : error);
-          }
-        } else if (item.type === 'dir') {
-          const subFiles = await this.fetchDirectoryFilesRecursive(
-            owner,
-            repo,
-            item.path,
-            ref,
-            basePath
-          );
-          files.push(...subFiles);
-        }
-      }
-
-      return files;
-    } catch (error) {
-      if (error instanceof GitHubNotFoundError) {
-        return [];
-      }
-      console.warn(`Failed to fetch directory ${dirPath}:`, error instanceof Error ? error.message : error);
-      return [];
-    }
-  }
-
-  /**
-   * GitHub API로 디렉토리 목록을 가져옵니다
-   */
-  private async listDirectory(
-    owner: string,
-    repo: string,
-    path: string,
-    ref: string
-  ): Promise<GitHubContent[]> {
-    const url = `${this.baseApiUrl}/repos/${owner}/${repo}/contents/${path}?ref=${ref}`;
 
     const response = await fetch(url, {
       headers: {
-        'Accept': 'application/vnd.github.v3+json',
+        Accept: 'application/vnd.github.v3+json',
         'User-Agent': 'ai-toolkit',
       },
     });
 
     if (!response.ok) {
-      this.handleHttpError(response.status, path);
+      this.handleHttpError(response.status, `tree/${sha}`);
     }
 
-    const data = await response.json();
-    return Array.isArray(data) ? data : [];
+    const data: GitHubTreeResponse = await response.json();
+
+    if (data.truncated) {
+      console.warn('Warning: Repository tree was truncated. Some files may be missing.');
+    }
+
+    return data.tree;
   }
 
   /**
-   * 파일 내용을 가져옵니다
+   * 레포지토리의 기본 브랜치를 가져옵니다
+   */
+  private async getDefaultBranch(owner: string, repo: string): Promise<string> {
+    const url = `${this.baseApiUrl}/repos/${owner}/${repo}`;
+
+    const response = await fetch(url, {
+      headers: {
+        Accept: 'application/vnd.github.v3+json',
+        'User-Agent': 'ai-toolkit',
+      },
+    });
+
+    if (!response.ok) {
+      // 실패하면 'main'을 기본값으로 사용
+      return 'main';
+    }
+
+    const data = (await response.json()) as { default_branch: string };
+    return data.default_branch || 'main';
+  }
+
+  /**
+   * ref의 commit SHA를 가져옵니다
+   */
+  private async getRefSha(owner: string, repo: string, ref: string): Promise<string> {
+    // branch로 시도
+    const branchUrl = `${this.baseApiUrl}/repos/${owner}/${repo}/branches/${ref}`;
+
+    const response = await fetch(branchUrl, {
+      headers: {
+        Accept: 'application/vnd.github.v3+json',
+        'User-Agent': 'ai-toolkit',
+      },
+    });
+
+    if (response.ok) {
+      const data: GitHubBranchResponse = await response.json();
+      return data.commit.sha;
+    }
+
+    // branch가 없으면 ref를 직접 SHA로 사용 시도
+    if (response.status === 404) {
+      // ref가 이미 SHA일 수 있음
+      return ref;
+    }
+
+    this.handleHttpError(response.status, `branches/${ref}`);
+  }
+
+  /**
+   * 트리에서 특정 경로의 파일들을 필터링합니다
+   */
+  private filterTreeByPath(tree: GitHubTreeItem[], basePath: string): GitHubTreeItem[] {
+    const prefix = basePath.endsWith('/') ? basePath : `${basePath}/`;
+
+    return tree.filter((item) => {
+      // blob(파일)만 필터링
+      if (item.type !== 'blob') return false;
+
+      // basePath로 시작하는 파일만
+      return item.path.startsWith(prefix) || item.path === basePath;
+    });
+  }
+
+  /**
+   * 파일들을 병렬로 가져옵니다 (동시성 제한 적용)
+   */
+  private async fetchFilesParallel(
+    owner: string,
+    repo: string,
+    ref: string,
+    items: GitHubTreeItem[]
+  ): Promise<CachedFile[]> {
+    const results: CachedFile[] = [];
+
+    // 배치로 나누어 처리 (동시성 제한)
+    for (let i = 0; i < items.length; i += this.concurrencyLimit) {
+      const batch = items.slice(i, i + this.concurrencyLimit);
+
+      const batchResults = await Promise.all(
+        batch.map(async (item) => {
+          try {
+            const content = await this.fetchFileContent(owner, repo, item.path, ref);
+            return { path: item.path, content };
+          } catch (error) {
+            console.warn(
+              `Failed to fetch file ${item.path}:`,
+              error instanceof Error ? error.message : error
+            );
+            return null;
+          }
+        })
+      );
+
+      results.push(...batchResults.filter((r): r is CachedFile => r !== null));
+    }
+
+    return results;
+  }
+
+  /**
+   * 파일 내용을 가져옵니다 (raw.githubusercontent.com 사용)
    */
   private async fetchFileContent(
     owner: string,
@@ -366,6 +299,153 @@ export class GitHubFetcher {
     }
 
     return response.text();
+  }
+
+  /**
+   * 캐시된 파일에서 리소스를 파싱합니다
+   */
+  private parseResourcesFromCache(
+    cachedFiles: CachedFile[],
+    dirPath: string,
+    type: ResourceType
+  ): Resource[] {
+    const resources: Resource[] = [];
+
+    // 디렉토리 구조 분석
+    const structure = this.analyzeDirectoryStructure(cachedFiles, dirPath);
+
+    for (const [subdir, files] of structure.subdirectories) {
+      const resource = this.parseSubdirectoryResource(subdir, files, type);
+      if (resource) {
+        resources.push(resource);
+      }
+    }
+
+    // 루트 레벨 .md 파일 처리
+    for (const file of structure.rootFiles) {
+      if (file.path.endsWith('.md')) {
+        const resource = this.parseSingleFileResource(file, type);
+        if (resource) {
+          resources.push(resource);
+        }
+      }
+    }
+
+    return resources;
+  }
+
+  /**
+   * 디렉토리 구조 분석
+   */
+  private analyzeDirectoryStructure(
+    files: CachedFile[],
+    basePath: string
+  ): {
+    subdirectories: Map<string, CachedFile[]>;
+    rootFiles: CachedFile[];
+  } {
+    const subdirectories = new Map<string, CachedFile[]>();
+    const rootFiles: CachedFile[] = [];
+    const prefix = basePath.endsWith('/') ? basePath : `${basePath}/`;
+
+    for (const file of files) {
+      // basePath에서 상대 경로 계산
+      const relativePath = file.path.startsWith(prefix)
+        ? file.path.slice(prefix.length)
+        : file.path;
+
+      const parts = relativePath.split('/');
+
+      if (parts.length === 1) {
+        // 루트 레벨 파일
+        rootFiles.push(file);
+      } else {
+        // 하위 디렉토리 파일
+        const subdirName = parts[0];
+        const subdirPath = `${basePath}/${subdirName}`;
+
+        if (!subdirectories.has(subdirPath)) {
+          subdirectories.set(subdirPath, []);
+        }
+        subdirectories.get(subdirPath)!.push(file);
+      }
+    }
+
+    return { subdirectories, rootFiles };
+  }
+
+  /**
+   * 하위 디렉토리에서 리소스 파싱
+   */
+  private parseSubdirectoryResource(
+    subdirPath: string,
+    files: CachedFile[],
+    type: ResourceType
+  ): Resource | null {
+    // 메인 파일 찾기
+    const mainFile = this.findMainResourceFile(files, type);
+    if (!mainFile) {
+      return null;
+    }
+
+    // 메인 파일 내용 찾기
+    const mainFileData = files.find((f) => f.path === mainFile.path);
+    if (!mainFileData) {
+      return null;
+    }
+
+    // 사이드 파일들 (메인 파일 제외)
+    const siblingFiles: SourceFile[] = files
+      .filter((f) => f.path !== mainFile.path)
+      .map((f) => {
+        // subdirPath 기준 상대 경로
+        const relativePath = f.path.startsWith(`${subdirPath}/`)
+          ? f.path.slice(subdirPath.length + 1)
+          : this.getFileName(f.path);
+        return {
+          path: relativePath,
+          content: f.content,
+          isDirectory: false,
+        };
+      });
+
+    const sourceFile: SourceFile = {
+      path: mainFile.path,
+      content: mainFileData.content,
+      isDirectory: false,
+      siblingFiles,
+    };
+
+    try {
+      return this.parser.parseResource(sourceFile, type);
+    } catch (error) {
+      console.warn(
+        `Failed to parse resource from ${subdirPath}:`,
+        error instanceof Error ? error.message : error
+      );
+      return null;
+    }
+  }
+
+  /**
+   * 단일 파일 리소스 파싱
+   */
+  private parseSingleFileResource(file: CachedFile, type: ResourceType): Resource | null {
+    const sourceFile: SourceFile = {
+      path: file.path,
+      content: file.content,
+      isDirectory: false,
+    };
+
+    try {
+      return this.parser.parseResource(sourceFile, type);
+    } catch (error) {
+      console.warn(
+        `Failed to parse resource ${file.path}:`,
+        error instanceof Error ? error.message : error
+      );
+      return null;
+    }
   }
 
   /**
@@ -399,12 +479,17 @@ export class GitHubFetcher {
   }
 
   /**
+   * 경로에서 파일명만 추출합니다
+   */
+  private getFileName(filePath: string): string {
+    const parts = filePath.split('/');
+    return parts[parts.length - 1];
+  }
+
+  /**
    * 메인 리소스 파일을 찾습니다
    */
-  private findMainResourceFile(
-    contents: GitHubContent[],
-    type: ResourceType
-  ): GitHubContent | null {
+  private findMainResourceFile(files: CachedFile[], type: ResourceType): CachedFile | null {
     // 타입별 메인 파일명 (우선순위 순)
     const mainFileNames: Record<ResourceType, string[]> = {
       skills: ['SKILL.md', 'skill.md'],
@@ -415,18 +500,17 @@ export class GitHubFetcher {
     const candidates = mainFileNames[type] || [];
 
     for (const candidate of candidates) {
-      const found = contents.find(
-        (item) => item.type === 'file' && item.name.toLowerCase() === candidate.toLowerCase()
-      );
+      const found = files.find((file) => {
+        const fileName = this.getFileName(file.path);
+        return fileName.toLowerCase() === candidate.toLowerCase();
+      });
       if (found) {
         return found;
       }
     }
 
     // 첫 번째 .md 파일 반환
-    return contents.find(
-      (item) => item.type === 'file' && item.name.endsWith('.md')
-    ) || null;
+    return files.find((file) => file.path.endsWith('.md')) || null;
   }
 }
 

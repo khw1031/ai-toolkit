@@ -125,11 +125,55 @@ describe('SourceParser', () => {
         expect(result.repo).toBe('repo');
       });
 
+      it('should parse Bitbucket SSH URL', () => {
+        const result = parseSource('git@bitbucket.org:workspace/repo.git');
+        expect(result.type).toBe('bitbucket');
+        expect(result.owner).toBe('workspace');
+        expect(result.repo).toBe('repo');
+        expect(result.url).toBe('https://bitbucket.org/workspace/repo');
+      });
+
       it('should parse generic SSH git URL', () => {
-        const result = parseSource('git@bitbucket.org:owner/repo.git');
+        const result = parseSource('git@unknown.host:owner/repo.git');
         expect(result.type).toBe('git');
         expect(result.owner).toBe('owner');
         expect(result.repo).toBe('repo');
+      });
+    });
+
+    describe('Bitbucket URL', () => {
+      it('should parse Bitbucket URL', () => {
+        const result = parseSource('https://bitbucket.org/workspace/repo');
+        expect(result.type).toBe('bitbucket');
+        expect(result.owner).toBe('workspace');
+        expect(result.repo).toBe('repo');
+        expect(result.url).toBe('https://bitbucket.org/workspace/repo');
+      });
+
+      it('should parse Bitbucket URL with .git suffix', () => {
+        const result = parseSource('https://bitbucket.org/workspace/repo.git');
+        expect(result.type).toBe('bitbucket');
+        expect(result.owner).toBe('workspace');
+        expect(result.repo).toBe('repo');
+      });
+
+      it('should parse Bitbucket URL with username prefix', () => {
+        const result = parseSource('https://username@bitbucket.org/workspace/repo.git');
+        expect(result.type).toBe('bitbucket');
+        expect(result.owner).toBe('workspace');
+        expect(result.repo).toBe('repo');
+        expect(result.url).toBe('https://bitbucket.org/workspace/repo');
+      });
+
+      it('should parse Bitbucket URL with branch and path', () => {
+        const result = parseSource(
+          'https://bitbucket.org/workspace/repo/src/main/skills/my-skill'
+        );
+        expect(result.type).toBe('bitbucket');
+        expect(result.owner).toBe('workspace');
+        expect(result.repo).toBe('repo');
+        expect(result.ref).toBe('main');
+        expect(result.subpath).toBe('skills/my-skill');
       });
     });
 
@@ -192,5 +236,18 @@ describe('SourceParser', () => {
       );
     });
 
+    it('should format Bitbucket source', () => {
+      const parsed = parseSource('https://bitbucket.org/workspace/repo');
+      expect(getSourceDisplayName(parsed)).toBe('Bitbucket: workspace/repo');
+    });
+
+    it('should format Bitbucket source with subpath', () => {
+      const parsed = parseSource(
+        'https://bitbucket.org/workspace/repo/src/main/skills/my-skill'
+      );
+      expect(getSourceDisplayName(parsed)).toBe(
+        'Bitbucket: workspace/repo/skills/my-skill'
+      );
+    });
   });
 });

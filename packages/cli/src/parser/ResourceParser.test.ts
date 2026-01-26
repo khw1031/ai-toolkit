@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { ResourceParser } from './ResourceParser';
 import type { SourceFile } from '../types';
 
@@ -70,6 +70,9 @@ This is a commit skill.`,
     });
 
     it('should handle malformed YAML gracefully', () => {
+      // Suppress console.warn during this test (YAML parse error is logged)
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
       const file: SourceFile = {
         path: 'skills/bad/SKILL.md',
         content: `---
@@ -81,6 +84,8 @@ Content`,
 
       const resource = parser.parseResource(file, 'skills');
       expect(resource.name).toBe('bad');
+
+      consoleSpy.mockRestore();
     });
   });
 

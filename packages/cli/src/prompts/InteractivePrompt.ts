@@ -10,6 +10,7 @@ import type {
 import { pathResolver } from '../path/PathResolver.js';
 import { parseSource, getSourceDisplayName } from '../source/SourceParser.js';
 import { githubFetcher } from '../fetch/GitHubFetcher.js';
+import { bitbucketFetcher } from '../fetch/BitbucketFetcher.js';
 import type { BatchAction } from '../install/BatchHandler.js';
 
 /**
@@ -43,6 +44,8 @@ export class InteractivePrompt {
     try {
       if (parsedSource.type === 'github') {
         availableResources = await githubFetcher.fetchResources(parsedSource, types);
+      } else if (parsedSource.type === 'bitbucket') {
+        availableResources = await bitbucketFetcher.fetchResources(parsedSource, types);
       } else {
         spinner.warn(`Source type "${parsedSource.type}" is not yet supported.`);
       }
@@ -158,6 +161,23 @@ export class InteractivePrompt {
   }
 
   /**
+   * description에서 첫 줄만 추출하고 길이 제한
+   */
+  private truncateDescription(description: string, maxLength = 60): string {
+    if (!description) return 'No description';
+
+    // 첫 줄만 추출 (줄바꿈 기준)
+    const firstLine = description.split(/\r?\n/)[0].trim();
+
+    // 길이 제한
+    if (firstLine.length > maxLength) {
+      return firstLine.slice(0, maxLength - 3) + '...';
+    }
+
+    return firstLine;
+  }
+
+  /**
    * 리소스 선택 (가져온 리소스 목록에서)
    */
   async selectResources(
@@ -180,10 +200,11 @@ export class InteractivePrompt {
         name: 'resources',
         message: 'Select resources to install:',
         choices: filteredResources.map((r) => ({
-          name: `[${r.type}] ${r.name} - ${r.description || 'No description'}`,
+          name: `[${r.type}] ${r.name} - ${this.truncateDescription(r.description)}`,
           value: r,
           checked: true, // 기본 전체 선택
         })),
+        pageSize: 15, // 한 번에 15개 표시
         validate: (input: Resource[]) => {
           if (input.length === 0) {
             return 'Please select at least one resource';

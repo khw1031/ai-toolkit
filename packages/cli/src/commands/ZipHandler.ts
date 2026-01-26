@@ -4,6 +4,7 @@ import { zipExporter } from '../export/ZipExporter.js';
 import { Logger } from '../utils/Logger.js';
 import { parseSource, getSourceDisplayName } from '../source/SourceParser.js';
 import { githubFetcher } from '../fetch/GitHubFetcher.js';
+import { bitbucketFetcher } from '../fetch/BitbucketFetcher.js';
 import type { ZipResult, ResourceType } from '../types.js';
 
 /**
@@ -51,6 +52,8 @@ export class ZipHandler {
       let resources;
       if (parsed.type === 'github') {
         resources = await githubFetcher.fetchResources(parsed, types);
+      } else if (parsed.type === 'bitbucket') {
+        resources = await bitbucketFetcher.fetchResources(parsed, types);
       } else {
         this.logger.failProgress(`Source type "${parsed.type}" is not yet supported.`);
         return;
