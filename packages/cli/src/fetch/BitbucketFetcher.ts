@@ -64,6 +64,18 @@ export class BitbucketRateLimitError extends BitbucketApiError {
  * git archive --remote 명령을 사용하여 SSH 키 인증을 활용합니다.
  * 최적화: 단일 SSH 호출로 전체 디렉토리를 가져와 캐시합니다.
  */
+/**
+ * 리소스 파일이 아닌 일반 문서 파일 목록
+ * findMainResourceFile 폴백 및 루트 레벨 처리에서 제외됩니다.
+ */
+const NON_RESOURCE_FILES = [
+  'README.md', 'readme.md',
+  'CHANGELOG.md', 'changelog.md',
+  'LICENSE.md', 'license.md',
+  'CONTRIBUTING.md', 'contributing.md',
+  'CLAUDE.md', 'AGENTS.md',
+];
+
 export class BitbucketFetcher {
   private parser: ResourceParser;
   private fileCache: Map<string, CachedFile[]> = new Map();
@@ -250,9 +262,11 @@ export class BitbucketFetcher {
       }
     }
 
-    // 루트 레벨 .md 파일 처리
+    // 루트 레벨 .md 파일 처리 (비-리소스 파일 제외)
     for (const file of structure.rootFiles) {
-      if (file.path.endsWith('.md')) {
+      const fileName = this.getFileName(file.path);
+      if (file.path.endsWith('.md') &&
+          !NON_RESOURCE_FILES.some(nr => fileName.toLowerCase() === nr.toLowerCase())) {
         const resource = this.parseSingleFileResource(file, type);
         if (resource) {
           resources.push(resource);
@@ -415,7 +429,7 @@ export class BitbucketFetcher {
     // 타입별 메인 파일명 (우선순위 순)
     const mainFileNames: Record<ResourceType, string[]> = {
       skills: ['SKILL.md', 'skill.md'],
-      rules: ['RULE.md', 'RULES.md', 'rule.md', 'rules.md', 'README.md'],
+      rules: ['RULE.md', 'RULES.md', 'rule.md', 'rules.md'],
       agents: ['AGENT.md', 'agent.md'],
     };
 
@@ -431,11 +445,12 @@ export class BitbucketFetcher {
       }
     }
 
-    // 첫 번째 .md 파일 반환
+    // 비-리소스 파일을 제외한 첫 번째 .md 파일 반환
     return (
       entries.find((entry) => {
         const fileName = this.getFileName(entry.path);
-        return entry.type === 'file' && fileName.endsWith('.md');
+        return entry.type === 'file' && fileName.endsWith('.md') &&
+          !NON_RESOURCE_FILES.some(nr => fileName.toLowerCase() === nr.toLowerCase());
       }) || null
     );
   }

@@ -418,6 +418,111 @@ name: my-skill
       expect(result[0].directory?.files).toHaveLength(1);
       expect(result[0].directory?.files[0].path).toBe('README.md');
     });
+
+    it('should not recognize README.md-only subdirectory as a resource', async () => {
+      vi.mocked(exec).mockImplementation((_cmd, _opts, callback) => {
+        if (typeof callback === 'function') {
+          callback(null, '', '');
+        }
+        return {} as ReturnType<typeof exec>;
+      });
+
+      vi.mocked(fs.readdir).mockImplementation(async (dirPath) => {
+        const pathStr = String(dirPath);
+        if (pathStr.endsWith('/skills')) {
+          return [
+            { name: 'some-dir', isDirectory: () => true, isFile: () => false },
+          ] as unknown as ReturnType<typeof fs.readdir>;
+        }
+        if (pathStr.endsWith('/some-dir')) {
+          return [
+            { name: 'README.md', isDirectory: () => false, isFile: () => true },
+          ] as unknown as ReturnType<typeof fs.readdir>;
+        }
+        return [] as unknown as ReturnType<typeof fs.readdir>;
+      });
+
+      vi.mocked(fs.readFile).mockResolvedValue('# Just a README');
+
+      const source: ParsedSource = {
+        type: 'bitbucket',
+        owner: 'workspace',
+        repo: 'repo',
+        raw: 'workspace/repo',
+      };
+
+      const result = await fetcher.fetchResources(source, ['skills']);
+      expect(result).toHaveLength(0);
+    });
+
+    it('should not recognize README.md as a root-level resource', async () => {
+      vi.mocked(exec).mockImplementation((_cmd, _opts, callback) => {
+        if (typeof callback === 'function') {
+          callback(null, '', '');
+        }
+        return {} as ReturnType<typeof exec>;
+      });
+
+      vi.mocked(fs.readdir).mockImplementation(async (dirPath) => {
+        const pathStr = String(dirPath);
+        if (pathStr.endsWith('/rules')) {
+          return [
+            { name: 'README.md', isDirectory: () => false, isFile: () => true },
+          ] as unknown as ReturnType<typeof fs.readdir>;
+        }
+        return [] as unknown as ReturnType<typeof fs.readdir>;
+      });
+
+      vi.mocked(fs.readFile).mockResolvedValue('# Rules Overview');
+
+      const source: ParsedSource = {
+        type: 'bitbucket',
+        owner: 'workspace',
+        repo: 'repo',
+        raw: 'workspace/repo',
+      };
+
+      const result = await fetcher.fetchResources(source, ['rules']);
+      expect(result).toHaveLength(0);
+    });
+
+    it('should not use non-resource files (CHANGELOG, LICENSE, etc.) as fallback', async () => {
+      vi.mocked(exec).mockImplementation((_cmd, _opts, callback) => {
+        if (typeof callback === 'function') {
+          callback(null, '', '');
+        }
+        return {} as ReturnType<typeof exec>;
+      });
+
+      vi.mocked(fs.readdir).mockImplementation(async (dirPath) => {
+        const pathStr = String(dirPath);
+        if (pathStr.endsWith('/skills')) {
+          return [
+            { name: 'some-dir', isDirectory: () => true, isFile: () => false },
+          ] as unknown as ReturnType<typeof fs.readdir>;
+        }
+        if (pathStr.endsWith('/some-dir')) {
+          return [
+            { name: 'CHANGELOG.md', isDirectory: () => false, isFile: () => true },
+            { name: 'LICENSE.md', isDirectory: () => false, isFile: () => true },
+            { name: 'CONTRIBUTING.md', isDirectory: () => false, isFile: () => true },
+          ] as unknown as ReturnType<typeof fs.readdir>;
+        }
+        return [] as unknown as ReturnType<typeof fs.readdir>;
+      });
+
+      vi.mocked(fs.readFile).mockResolvedValue('# Some doc file');
+
+      const source: ParsedSource = {
+        type: 'bitbucket',
+        owner: 'workspace',
+        repo: 'repo',
+        raw: 'workspace/repo',
+      };
+
+      const result = await fetcher.fetchResources(source, ['skills']);
+      expect(result).toHaveLength(0);
+    });
   });
 
   describe('SSH URL generation', () => {

@@ -87,6 +87,18 @@ export class GitHubRateLimitError extends GitHubApiError {
  * - API 호출: 2회 (branch SHA + tree)
  * - 파일 fetch: raw.githubusercontent.com (Rate Limit 영향 없음)
  */
+/**
+ * 리소스 파일이 아닌 일반 문서 파일 목록
+ * findMainResourceFile 폴백 및 루트 레벨 처리에서 제외됩니다.
+ */
+const NON_RESOURCE_FILES = [
+  'README.md', 'readme.md',
+  'CHANGELOG.md', 'changelog.md',
+  'LICENSE.md', 'license.md',
+  'CONTRIBUTING.md', 'contributing.md',
+  'CLAUDE.md', 'AGENTS.md',
+];
+
 export class GitHubFetcher {
   private parser: ResourceParser;
   private baseApiUrl = 'https://api.github.com';
@@ -321,9 +333,11 @@ export class GitHubFetcher {
       }
     }
 
-    // 루트 레벨 .md 파일 처리
+    // 루트 레벨 .md 파일 처리 (비-리소스 파일 제외)
     for (const file of structure.rootFiles) {
-      if (file.path.endsWith('.md')) {
+      const fileName = this.getFileName(file.path);
+      if (file.path.endsWith('.md') &&
+          !NON_RESOURCE_FILES.some(nr => fileName.toLowerCase() === nr.toLowerCase())) {
         const resource = this.parseSingleFileResource(file, type);
         if (resource) {
           resources.push(resource);
@@ -493,7 +507,7 @@ export class GitHubFetcher {
     // 타입별 메인 파일명 (우선순위 순)
     const mainFileNames: Record<ResourceType, string[]> = {
       skills: ['SKILL.md', 'skill.md'],
-      rules: ['RULE.md', 'RULES.md', 'rule.md', 'rules.md', 'README.md'],
+      rules: ['RULE.md', 'RULES.md', 'rule.md', 'rules.md'],
       agents: ['AGENT.md', 'agent.md'],
     };
 
@@ -509,8 +523,12 @@ export class GitHubFetcher {
       }
     }
 
-    // 첫 번째 .md 파일 반환
-    return files.find((file) => file.path.endsWith('.md')) || null;
+    // 비-리소스 파일을 제외한 첫 번째 .md 파일 반환
+    return files.find((file) => {
+      const fileName = this.getFileName(file.path);
+      return file.path.endsWith('.md') &&
+        !NON_RESOURCE_FILES.some(nr => fileName.toLowerCase() === nr.toLowerCase());
+    }) || null;
   }
 }
 

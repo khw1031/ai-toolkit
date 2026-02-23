@@ -396,6 +396,73 @@ name: my-rule
       expect(result[0].directory?.files).toHaveLength(1);
       expect(result[0].directory?.files[0].path).toBe('README.md');
     });
+
+    it('should not recognize README.md-only subdirectory as a resource', async () => {
+      mockSuccessFlow({
+        tree: [
+          { path: 'skills/some-dir/README.md', type: 'blob' },
+        ],
+        files: {
+          'skills/some-dir/README.md': '# Just a README',
+        },
+      });
+
+      const source: ParsedSource = {
+        type: 'github',
+        owner: 'owner',
+        repo: 'repo',
+        raw: 'owner/repo',
+      };
+
+      const result = await fetcher.fetchResources(source, ['skills']);
+      expect(result).toHaveLength(0);
+    });
+
+    it('should not recognize README.md as a root-level resource', async () => {
+      mockSuccessFlow({
+        tree: [
+          { path: 'rules/README.md', type: 'blob' },
+        ],
+        files: {
+          'rules/README.md': '# Rules Overview',
+        },
+      });
+
+      const source: ParsedSource = {
+        type: 'github',
+        owner: 'owner',
+        repo: 'repo',
+        raw: 'owner/repo',
+      };
+
+      const result = await fetcher.fetchResources(source, ['rules']);
+      expect(result).toHaveLength(0);
+    });
+
+    it('should not use non-resource files (CHANGELOG, LICENSE, etc.) as fallback', async () => {
+      mockSuccessFlow({
+        tree: [
+          { path: 'skills/some-dir/CHANGELOG.md', type: 'blob' },
+          { path: 'skills/some-dir/LICENSE.md', type: 'blob' },
+          { path: 'skills/some-dir/CONTRIBUTING.md', type: 'blob' },
+        ],
+        files: {
+          'skills/some-dir/CHANGELOG.md': '# Changelog',
+          'skills/some-dir/LICENSE.md': '# License',
+          'skills/some-dir/CONTRIBUTING.md': '# Contributing',
+        },
+      });
+
+      const source: ParsedSource = {
+        type: 'github',
+        owner: 'owner',
+        repo: 'repo',
+        raw: 'owner/repo',
+      };
+
+      const result = await fetcher.fetchResources(source, ['skills']);
+      expect(result).toHaveLength(0);
+    });
   });
 
   describe('API optimization', () => {
