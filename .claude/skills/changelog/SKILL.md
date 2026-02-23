@@ -20,19 +20,37 @@ CHANGELOG.md에 변경 사항과 변경 담당자(문의담당자)를 정리하�
 
 ## 실행 단계
 
-### 1단계: 현재 상태 파악
+### 1단계: 프로젝트 구조 파악
+
+먼저 모노레포 여부를 확인하고, 대상 패키지를 결정합니다.
 
 ```bash
-# 1. 현재 버전 확인
-grep -m 1 '"version"' package.json
+# 1. 모노레포 여부 확인 (pnpm-workspace.yaml, lerna.json, workspaces in package.json)
+ls pnpm-workspace.yaml lerna.json 2>/dev/null
+grep -q '"workspaces"' package.json 2>/dev/null && echo "npm workspaces 사용"
 
-# 2. 최근 태그 이후 커밋 확인 (태그가 없으면 전체 커밋)
+# 2. 패키지 목록 확인 (모노레포인 경우)
+ls packages/*/package.json 2>/dev/null
+```
+
+**모노레포인 경우:** 사용자에게 대상 패키지를 확인합니다.
+이후 모든 경로(`package.json`, `CHANGELOG.md`)는 해당 패키지 디렉토리 기준으로 사용합니다.
+예: `packages/cli/package.json`, `packages/cli/CHANGELOG.md`
+
+**단일 패키지인 경우:** 루트의 `package.json`, `CHANGELOG.md`를 사용합니다.
+
+```bash
+# 3. 현재 버전 확인 (PKG_DIR은 대상 패키지 경로, 단일 패키지면 ".")
+PKG_DIR="."  # 또는 "packages/cli" 등
+grep -m 1 '"version"' $PKG_DIR/package.json
+
+# 4. 최근 태그 이후 커밋 확인 (태그가 없으면 전체 커밋)
 git tag --sort=-v:refname | head -1
 git log $(git tag --sort=-v:refname | head -1)..HEAD --oneline --no-merges 2>/dev/null || \
   git log --oneline --no-merges -20
 
-# 3. 기존 CHANGELOG.md 확인
-head -30 CHANGELOG.md 2>/dev/null || echo "CHANGELOG.md 없음 - 새로 생성"
+# 5. 기존 CHANGELOG.md 확인
+head -30 $PKG_DIR/CHANGELOG.md 2>/dev/null || echo "CHANGELOG.md 없음 - 새로 생성"
 ```
 
 ### 2단계: 버전 유형 선택
@@ -96,11 +114,10 @@ git log $(git tag --sort=-v:refname | head -1)..HEAD --format="%s|%an" --no-merg
 ### 5단계: package.json 버전 업데이트
 
 ```bash
-# package.json의 version 필드를 새 버전으로 수정
+# 대상 패키지의 package.json version 필드를 수정
 # Edit 도구를 사용하여 "version": "이전버전" → "version": "새버전" 변경
+# PKG_DIR: 모노레포면 패키지 경로 (예: packages/cli), 단일이면 "."
 ```
-
-**모노레포인 경우:** 해당 패키지의 package.json만 수정합니다.
 
 ### 6단계: 결과 확인
 
@@ -111,14 +128,15 @@ git log $(git tag --sort=-v:refname | head -1)..HEAD --format="%s|%an" --no-merg
 git diff --stat
 
 # CHANGELOG.md 상단 확인
-head -30 CHANGELOG.md
+head -30 $PKG_DIR/CHANGELOG.md
 ```
 
 ---
 
 ## CHANGELOG.md 초기 구조
 
-CHANGELOG.md가 없거나 비어있으면 아래 헤더로 시작합니다:
+CHANGELOG.md가 없거나 비어있으면 아래 헤더로 시작합니다.
+파일 위치는 대상 패키지 디렉토리입니다 (모노레포: `packages/<name>/CHANGELOG.md`, 단일: `CHANGELOG.md`).
 
 ```markdown
 # Changelog
